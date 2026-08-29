@@ -452,8 +452,17 @@ try {
     var text = document.getElementById('syncText');
     if (!dot) return;
     if (mode === 'live') { dot.className = 'dot'; text.textContent = '실시간 동기화'; }
-    else if (mode === 'local') { dot.className = 'dot off'; text.textContent = '이 브라우저에만 저장(공유 불가)'; }
+    else if (mode === 'local') { dot.className = 'dot off'; text.textContent = '이 브라우저에만 저장(공유 불가) — 서버 연결 실패'; }
     else { dot.className = 'dot off'; text.textContent = '연결 중…'; }
+  }
+
+  // Firestore가 응답하지 않을 때(프로젝트 미설정, 네트워크 차단 등) 데이터가
+  // 통째로 사라지지 않도록 이 브라우저의 localStorage 저장으로 전환한다.
+  function fallbackToLocal() {
+    if (useLocal) return;
+    useLocal = true;
+    db = null;
+    setSyncStatus('local');
   }
 
   async function initStore() {
@@ -475,43 +484,53 @@ try {
         settingsRef.set(settings).catch(function () {});
       }
       render();
-    }, function () { setSyncStatus('local'); });
+    }, function () { fallbackToLocal(); loadLocal(); render(); });
 
     var recordsRef = db.collection('records').orderBy('date', 'asc').limit(1000);
     recordsRef.onSnapshot(function (snap) {
       records = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
       render();
-    }, function () {});
+    }, function () { fallbackToLocal(); loadLocal(); render(); });
   }
 
   async function addRecord(rec) {
-    if (db) { await db.collection('records').add(rec); }
-    else {
-      rec.id = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      records.push(rec); records.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-      saveLocal(); render();
+    if (db) {
+      try { await db.collection('records').add(rec); return; }
+      catch (e) { fallbackToLocal(); }
     }
+    rec.id = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    records.push(rec); records.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    saveLocal(); render();
   }
   async function deleteRecord(id) {
-    if (db) { await db.doc('records/' + id).delete(); }
-    else { records = records.filter(function (r) { return r.id !== id; }); saveLocal(); render(); }
+    if (db) {
+      try { await db.doc('records/' + id).delete(); return; }
+      catch (e) { fallbackToLocal(); }
+    }
+    records = records.filter(function (r) { return r.id !== id; });
+    saveLocal(); render();
   }
   async function replaceAllRecords(newRecords) {
     if (db) {
-      var snap = await db.collection('records').get();
-      await Promise.all(snap.docs.map(function (d) { return db.doc('records/' + d.id).delete(); }));
-      await Promise.all(newRecords.map(function (r) { return db.collection('records').add(r); }));
-    } else {
-      records = newRecords.map(function (r, i) {
-        return Object.assign({ id: 'local_import_' + Date.now() + '_' + i }, r);
-      });
-      saveLocal(); render();
+      try {
+        var snap = await db.collection('records').get();
+        await Promise.all(snap.docs.map(function (d) { return db.doc('records/' + d.id).delete(); }));
+        await Promise.all(newRecords.map(function (r) { return db.collection('records').add(r); }));
+        return;
+      } catch (e) { fallbackToLocal(); }
     }
+    records = newRecords.map(function (r, i) {
+      return Object.assign({ id: 'local_import_' + Date.now() + '_' + i }, r);
+    });
+    saveLocal(); render();
   }
   async function saveSettings(patch) {
     settings = Object.assign({}, settings, patch);
-    if (db) { await db.doc('settings/main').set(settings); }
-    else { saveLocal(); render(); }
+    if (db) {
+      try { await db.doc('settings/main').set(settings); return; }
+      catch (e) { fallbackToLocal(); }
+    }
+    saveLocal(); render();
   }
 
   // ---------- ledger / stock math ----------
