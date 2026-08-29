@@ -869,8 +869,20 @@
     });
   }
 
-  function saveCalendarImage(blob) {
+  async function saveCalendarImage(blob) {
     var filename = '루카_전입출현황_' + calMonthCursor.y + String(calMonthCursor.m + 1).padStart(2, '0') + '.png';
+
+    // inside the Claude Artifact viewer, only the downloads capability can hand the
+    // viewer a file — a plain <a download> link is inert there.
+    var claudeDownloads = null;
+    try {
+      claudeDownloads = (window.claude && typeof window.claude.use === 'function') ? await window.claude.use('downloads') : null;
+    } catch (e) { claudeDownloads = null; }
+    if (claudeDownloads) {
+      try { await claudeDownloads.save({ filename: filename, data: blob }); return; }
+      catch (e) { /* fall through to share/download below */ }
+    }
+
     var file = null;
     try { file = new File([blob], filename, { type: 'image/png' }); } catch (e) {}
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
