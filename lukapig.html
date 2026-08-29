@@ -753,6 +753,40 @@
       '</section>';
   }
 
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function truncateToWidth(ctx, text, maxWidth) {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    var t = text;
+    while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) t = t.slice(0, -1);
+    return t + '…';
+  }
+
+  // solid-color pill so each entry stays legible even when the copied image is
+  // shrunk down in a chat bubble
+  function drawBadge(ctx, x, y, text, bg, maxWidth) {
+    var boxH = 17;
+    ctx.font = '700 10.5px "IBM Plex Sans KR", sans-serif';
+    var label = truncateToWidth(ctx, text, maxWidth - 10);
+    var boxW = Math.min(maxWidth, ctx.measureText(label).width + 10);
+    ctx.fillStyle = bg;
+    roundRectPath(ctx, x, y, boxW, boxH, 3);
+    ctx.fill();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + 5, y + boxH / 2 + 0.5);
+    ctx.textBaseline = 'alphabetic';
+    return boxH;
+  }
+
   function drawCalendarCanvas() {
     var y = calMonthCursor.y, m = calMonthCursor.m;
     var firstOfMonth = Date.UTC(y, m, 1);
@@ -769,7 +803,7 @@
     });
 
     var scale = 2;
-    var pad = 20, headerH = 60, dowH = 30, cellW = 186, cellH = 112;
+    var pad = 18, headerH = 54, dowH = 26, cellW = 152, cellH = 106;
     var gridW = cellW * 7;
     var gridH = dowH + cellH * weeksCount;
     var canvasW = gridW + pad * 2;
@@ -828,32 +862,31 @@
 
         var dDate = new Date(dms);
         ctx.fillStyle = outside ? '#8A9389' : '#1B2320';
-        ctx.font = '600 12px "IBM Plex Mono", monospace';
-        ctx.fillText(String(dDate.getUTCDate()), cx + 8, cy + 18);
+        ctx.font = '700 13px "IBM Plex Mono", monospace';
+        ctx.fillText(String(dDate.getUTCDate()), cx + 7, cy + 17);
 
         var dayRecs = byDay[dms] || [];
-        var maxLines = 5;
-        var ty = cy + 36;
+        var maxLines = 3;
+        var ty = cy + 29;
+        var badgeMaxW = cellW - 14;
         dayRecs.slice(0, maxLines).forEach(function (r) {
           var text, color;
           if (r.type === 'in') { text = '전입 +' + fmtNum(r.head) + '두'; color = '#2563AA'; }
-          else if (r.subtype === 'farm') { text = '전출 -' + fmtNum(r.head) + '두'; color = '#B96A1F'; }
-          else { text = '외부 -' + fmtNum(r.head) + '두'; color = '#705B87'; }
-          ctx.fillStyle = color;
-          ctx.font = '600 10.5px "IBM Plex Sans KR", sans-serif';
-          ctx.fillText(text, cx + 8, ty);
-          ty += 14.5;
+          else if (r.subtype === 'farm') { text = '전출 -' + fmtNum(r.head) + '두' + (r.farmName ? ' · ' + r.farmName : ''); color = '#B96A1F'; }
+          else { text = '외부 -' + fmtNum(r.head) + '두' + (r.farmName ? ' · ' + r.farmName : ''); color = '#705B87'; }
+          var h = drawBadge(ctx, cx + 7, ty, text, color, badgeMaxW);
+          ty += h + 3;
         });
         if (dayRecs.length > maxLines) {
           ctx.fillStyle = '#8A9389';
-          ctx.font = '500 9.5px "IBM Plex Sans KR", sans-serif';
-          ctx.fillText('+' + (dayRecs.length - maxLines) + '건 더', cx + 8, ty);
+          ctx.font = '600 10px "IBM Plex Sans KR", sans-serif';
+          ctx.fillText('+' + (dayRecs.length - maxLines) + '건 더', cx + 7, ty + 8);
         }
 
         if (dayRecs.length) {
-          ctx.fillStyle = '#8A9389';
-          ctx.font = '500 9.5px "IBM Plex Sans KR", sans-serif';
-          ctx.fillText('재고 ' + fmtNum(stockAsOf(dms)) + '두', cx + 8, cy + cellH - 8);
+          ctx.fillStyle = '#5C665E';
+          ctx.font = '600 10px "IBM Plex Sans KR", sans-serif';
+          ctx.fillText('재고 ' + fmtNum(stockAsOf(dms)) + '두', cx + 7, cy + cellH - 7);
         }
       }
     }
