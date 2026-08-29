@@ -1,0 +1,1003 @@
+<title>루카 후기자돈사 전입출 현황판</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F2F4F0;
+    --surface: #FFFFFF;
+    --surface-2: #E8EBE3;
+    --border: #D8DCD1;
+    --text: #1B2320;
+    --text-muted: #5C665E;
+    --text-faint: #8A9389;
+    --accent: #3F6659;
+    --accent-strong: #2C4A40;
+    --accent-soft: #DCE7DF;
+    --in: #2563AA;
+    --in-soft: #DCE8F7;
+    --out-farm: #B96A1F;
+    --out-farm-soft: #F5E3CC;
+    --out-ext: #705B87;
+    --out-ext-soft: #E9E1EF;
+    --danger: #A83636;
+    --danger-soft: #F5DEDD;
+    --success: #3F7D53;
+    --success-soft: #DEEDE2;
+    --shadow: rgba(27, 35, 32, 0.08);
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141715;
+      --surface: #1D211E;
+      --surface-2: #262B27;
+      --border: #343A34;
+      --text: #EAEDE9;
+      --text-muted: #9BA69E;
+      --text-faint: #6E786F;
+      --accent: #7BB39D;
+      --accent-strong: #9BCBB6;
+      --accent-soft: #24322B;
+      --in: #7BAAE3;
+      --in-soft: #1E2C40;
+      --out-farm: #E2A85E;
+      --out-farm-soft: #3A2C18;
+      --out-ext: #C0AAD6;
+      --out-ext-soft: #302A3A;
+      --danger: #E58A8A;
+      --danger-soft: #3C2323;
+      --success: #86CC9F;
+      --success-soft: #1F3627;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141715;
+    --surface: #1D211E;
+    --surface-2: #262B27;
+    --border: #343A34;
+    --text: #EAEDE9;
+    --text-muted: #9BA69E;
+    --text-faint: #6E786F;
+    --accent: #7BB39D;
+    --accent-strong: #9BCBB6;
+    --accent-soft: #24322B;
+    --in: #7BAAE3;
+    --in-soft: #1E2C40;
+    --out-farm: #E2A85E;
+    --out-farm-soft: #3A2C18;
+    --out-ext: #C0AAD6;
+    --out-ext-soft: #302A3A;
+    --danger: #E58A8A;
+    --danger-soft: #3C2323;
+    --success: #86CC9F;
+    --success-soft: #1F3627;
+    --shadow: rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans KR', 'Malgun Gothic', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'IBM Plex Mono', 'Consolas', monospace; font-variant-numeric: tabular-nums; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  button { font-family: inherit; }
+  input, select, button { font-size: 14px; }
+
+  #app { max-width: 1080px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* header */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--bg);
+    padding: 14px 0 10px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 9px; margin-right: auto; }
+  .brand .farm { font-size: 12px; letter-spacing: .04em; color: var(--text-muted); font-weight: 500; }
+  .brand h1 { font-size: 19px; font-weight: 700; color: var(--accent-strong); }
+  .tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 999px; }
+  .tab-btn {
+    border: none; background: transparent; color: var(--text-muted);
+    padding: 7px 16px; border-radius: 999px; cursor: pointer; font-weight: 600;
+    transition: background .15s, color .15s;
+  }
+  .tab-btn.active { background: var(--surface); color: var(--accent-strong); box-shadow: 0 1px 2px var(--shadow); }
+  .sync-pill {
+    font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px; background: var(--surface-2);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex: none; }
+  .dot.off { background: var(--text-faint); }
+
+  /* cards */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
+  @media (max-width: 760px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .card .label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .card .value { font-size: 24px; font-weight: 600; }
+  .card .sub { font-size: 12px; color: var(--text-faint); }
+
+  section.panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 16px;
+  }
+  section.panel > h2 { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  section.panel > .hint { font-size: 12.5px; color: var(--text-muted); margin-bottom: 14px; }
+
+  .field-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .field input, .field select {
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    border-radius: 7px; padding: 7px 9px; min-width: 0;
+  }
+  .field input:focus, .field select:focus, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  .field.grow { flex: 1 1 160px; }
+  .field.num input { width: 100px; }
+  .field.date input { width: 148px; }
+
+  .btn {
+    border: none; border-radius: 7px; padding: 8px 16px; cursor: pointer; font-weight: 600;
+    background: var(--accent); color: #fff;
+  }
+  .btn:hover { background: var(--accent-strong); }
+  .btn.ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn.ghost:hover { background: var(--surface-2); color: var(--text); }
+  .btn.danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 5px 10px; font-size: 12.5px; }
+  .btn.danger-outline:hover { background: var(--danger-soft); }
+  .btn.small { padding: 5px 11px; font-size: 12.5px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .badge.in { background: var(--in-soft); color: var(--in); }
+  .badge.farm { background: var(--out-farm-soft); color: var(--out-farm); }
+  .badge.ext { background: var(--out-ext-soft); color: var(--out-ext); }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child, th.left, td.left { text-align: left; }
+  thead th { background: var(--surface-2); color: var(--text-muted); font-size: 12px; font-weight: 600; position: sticky; top: 0; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-2); }
+  .inline-input { width: 64px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 6px; padding: 4px 6px; text-align: right; }
+  .week-hi { background: var(--accent-soft) !important; }
+
+  .empty { color: var(--text-faint); font-style: italic; padding: 18px; text-align: center; }
+
+  /* calendar */
+  .cal-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .cal-toolbar .month-label { font-size: 17px; font-weight: 700; min-width: 108px; }
+  .cal-scroll { overflow-x: auto; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(76px, 1fr)); min-width: 580px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .cal-dow { background: var(--surface-2); color: var(--text-muted); font-size: 11.5px; font-weight: 600; text-align: center; padding: 6px 0; }
+  .cal-day {
+    background: var(--surface); border-top: 1px solid var(--border); border-left: 1px solid var(--border);
+    min-height: 88px; padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; position: relative;
+  }
+  .cal-day.outside { background: var(--bg); color: var(--text-faint); }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-daynum { font-size: 12px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .cal-chip { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 4px; line-height: 1.4; display: block; }
+  .cal-chip .fname { font-weight: 500; opacity: .85; }
+  .cal-chip.in { background: var(--in-soft); color: var(--in); }
+  .cal-chip.farm { background: var(--out-farm-soft); color: var(--out-farm); }
+  .cal-chip.ext { background: var(--out-ext-soft); color: var(--out-ext); }
+  .cal-chip.more { background: transparent; color: var(--text-faint); font-weight: 500; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 12.5px; color: var(--text-muted); align-items: center; }
+  .legend .sw { display: inline-flex; align-items: center; gap: 5px; }
+  .legend .dot2 { width: 9px; height: 9px; border-radius: 3px; }
+
+  .import-box { border: 1px dashed var(--border); border-radius: 8px; padding: 12px 14px; margin-top: 12px; background: var(--surface-2); }
+  .import-box .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .import-box .warn-list { font-size: 12.5px; color: var(--text-muted); margin: 8px 0 0; padding-left: 18px; max-height: 120px; overflow-y: auto; }
+
+  .share-mode .topbar .tabs, .share-mode .topbar .sync-pill { display: none !important; }
+  .share-mode section.panel.input-only { display: none !important; }
+  .share-mode #shareToggle { font-weight: 700; }
+
+  footer.note { font-size: 12px; color: var(--text-faint); text-align: center; padding: 20px 0 4px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="farm">루카 후기자돈사</span>
+      <h1>전입출 현황판</h1>
+    </div>
+    <div class="tabs" id="tabSwitch" data-action-group="tabs">
+      <button class="tab-btn" data-action="setTab" data-tab="dash">입력 · 현황</button>
+      <button class="tab-btn" data-action="setTab" data-tab="calendar">전입전출 계획</button>
+    </div>
+    <span class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncText">연결 중…</span></span>
+  </div>
+
+  <div id="view"></div>
+
+  <footer class="note">주차 기준: 일요일 시작</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- constants ----------
+  var DAY_MS = 86400000;
+  var ANCHOR_MS = Date.UTC(2026, 0, 4); // 2026-01-04, Sunday — matches 수급계획 파일 기준일
+  var WEEKDAY_KR = ['일','월','화','수','목','금','토'];
+  var IN_FARM_NAME = '익산 자돈사';
+
+  function todayMs() {
+    var d = new Date();
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function parseISO(s) {
+    var p = s.split('-').map(Number);
+    return Date.UTC(p[0], p[1] - 1, p[2]);
+  }
+  function toISO(ms) {
+    var d = new Date(ms);
+    var y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate();
+    return y + '-' + String(m).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+  }
+  function fmtShort(ms) {
+    var d = new Date(ms);
+    return (d.getUTCMonth() + 1) + '월 ' + d.getUTCDate() + '일(' + WEEKDAY_KR[d.getUTCDay()] + ')';
+  }
+  function fmtSlash(ms) {
+    var d = new Date(ms);
+    return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '(' + WEEKDAY_KR[d.getUTCDay()] + ')';
+  }
+  function fmtNum(n) { return (n || 0).toLocaleString('ko-KR'); }
+
+  // ---------- week model (replicates 수급계획 파일의 고정 수식: 시작일 anchor + 7일 반복) ----------
+  var weekCache = new Map();
+  function computeWeek(idx) {
+    if (weekCache.has(idx)) return weekCache.get(idx);
+    var startMs = ANCHOR_MS + idx * 7 * DAY_MS;
+    var endMs = startMs + 6 * DAY_MS;
+    var counts = {};
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(startMs + i * DAY_MS);
+      var key = d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1);
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    var labelKey = null, max = 0;
+    for (var k in counts) { if (counts[k] > max) { max = counts[k]; labelKey = k; } }
+    var parts = labelKey.split('-').map(Number);
+    var ly = parts[0], lm = parts[1];
+    var weekNum;
+    if (idx <= 0) {
+      weekNum = 1;
+    } else {
+      var prev = computeWeek(idx - 1);
+      weekNum = (prev.year === ly && prev.month === lm) ? prev.weekNum + 1 : 1;
+    }
+    var result = { idx: idx, start: startMs, end: endMs, year: ly, month: lm, weekNum: weekNum,
+      label: lm + '월 ' + weekNum + '주' };
+    weekCache.set(idx, result);
+    return result;
+  }
+  function weekIndexOf(ms) { return Math.floor((ms - ANCHOR_MS) / (7 * DAY_MS)); }
+  function weekOf(ms) { return computeWeek(weekIndexOf(ms)); }
+
+  // ---------- state ----------
+  var db = null, useLocal = false;
+  var settings = defaultSettings();
+  var records = [];
+  var activeTab = 'dash';
+  var calMonthCursor = (function () { var t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
+  var shareMode = false;
+  var confirmingDeleteId = null;
+  var pendingImport = null;
+  var importBusy = false;
+  var importError = null;
+
+  function defaultSettings() {
+    return {
+      baseDate: '2026-08-16',
+      baseStock: 1961,
+      defaultWeeklyDeath: 20,
+      weeklyDeaths: {}
+    };
+  }
+
+  // ---------- persistence ----------
+  var LOCAL_KEY = 'lukapig_v1';
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LOCAL_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        settings = Object.assign(defaultSettings(), parsed.settings || {});
+        records = parsed.records || [];
+      }
+    } catch (e) {}
+  }
+  function saveLocal() {
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify({ settings: settings, records: records })); } catch (e) {}
+  }
+
+  function setSyncStatus(mode) {
+    var dot = document.getElementById('syncDot');
+    var text = document.getElementById('syncText');
+    if (!dot) return;
+    if (mode === 'live') { dot.className = 'dot'; text.textContent = '실시간 동기화'; }
+    else if (mode === 'local') { dot.className = 'dot off'; text.textContent = '이 브라우저에만 저장(공유 불가)'; }
+    else { dot.className = 'dot off'; text.textContent = '연결 중…'; }
+  }
+
+  async function initStore() {
+    try {
+      db = (window.claude && typeof window.claude.use === 'function') ? await window.claude.use('db') : null;
+    } catch (e) { db = null; }
+    if (!db) {
+      useLocal = true;
+      loadLocal();
+      setSyncStatus('local');
+      render();
+      return;
+    }
+    setSyncStatus('live');
+    var settingsRef = db.doc('settings/main');
+    settingsRef.onSnapshot(function (snap) {
+      if (snap.exists) {
+        settings = Object.assign(defaultSettings(), snap.data());
+      } else {
+        settings = defaultSettings();
+        settingsRef.set(settings).catch(function () {});
+      }
+      render();
+    }, function () { setSyncStatus('local'); });
+
+    var recordsRef = db.collection('records').orderBy('date', 'asc').limit(1000);
+    recordsRef.onSnapshot(function (snap) {
+      records = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      render();
+    }, function () {});
+  }
+
+  async function addRecord(rec) {
+    if (db) { await db.collection('records').add(rec); }
+    else {
+      rec.id = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      records.push(rec); records.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+      saveLocal(); render();
+    }
+  }
+  async function deleteRecord(id) {
+    if (db) { await db.doc('records/' + id).delete(); }
+    else { records = records.filter(function (r) { return r.id !== id; }); saveLocal(); render(); }
+  }
+  async function replaceAllRecords(newRecords) {
+    if (db) {
+      var snap = await db.collection('records').get();
+      await Promise.all(snap.docs.map(function (d) { return db.doc('records/' + d.id).delete(); }));
+      await Promise.all(newRecords.map(function (r) { return db.collection('records').add(r); }));
+    } else {
+      records = newRecords.map(function (r, i) {
+        return Object.assign({ id: 'local_import_' + Date.now() + '_' + i }, r);
+      });
+      saveLocal(); render();
+    }
+  }
+  async function saveSettings(patch) {
+    settings = Object.assign({}, settings, patch);
+    if (db) { await db.doc('settings/main').set(settings); }
+    else { saveLocal(); render(); }
+  }
+
+  // ---------- ledger / stock math ----------
+  function deathForWeek(weekStartISO) {
+    var v = settings.weeklyDeaths[weekStartISO];
+    return (v === undefined || v === null || v === '') ? settings.defaultWeeklyDeath : Number(v);
+  }
+
+  function buildLedger(maxMs) {
+    // actual transactions
+    var events = records.map(function (r) {
+      var delta = r.type === 'in' ? Number(r.head) : -Number(r.head);
+      return { date: parseISO(r.date), delta: delta, kind: 'tx', ref: r };
+    });
+    // synthetic weekly death deductions, from base week through maxMs's week
+    var baseMs = parseISO(settings.baseDate);
+    var startIdx = weekIndexOf(baseMs);
+    var endIdx = weekIndexOf(maxMs);
+    for (var idx = startIdx; idx <= endIdx; idx++) {
+      var wk = computeWeek(idx);
+      var wkStartISO = toISO(wk.start);
+      var death = deathForWeek(wkStartISO);
+      if (death) events.push({ date: wk.end, delta: -death, kind: 'death', ref: { week: wk.label } });
+    }
+    events.sort(function (a, b) {
+      if (a.date !== b.date) return a.date - b.date;
+      var pa = a.kind === 'death' ? 1 : 0, pb = b.kind === 'death' ? 1 : 0;
+      return pa - pb;
+    });
+    return events;
+  }
+
+  function stockAsOf(queryMs) {
+    var baseMs = parseISO(settings.baseDate);
+    var horizon = Math.max(queryMs, baseMs, todayMs() + 60 * DAY_MS);
+    var ledger = buildLedger(horizon);
+    var stock = settings.baseStock;
+    if (queryMs >= baseMs) {
+      for (var i = 0; i < ledger.length; i++) {
+        if (ledger[i].date >= baseMs && ledger[i].date <= queryMs) stock += ledger[i].delta;
+      }
+    } else {
+      for (var j = 0; j < ledger.length; j++) {
+        if (ledger[j].date > queryMs && ledger[j].date < baseMs) stock -= ledger[j].delta;
+      }
+    }
+    return stock;
+  }
+
+  function weekAggregate(idx) {
+    var wk = computeWeek(idx);
+    var inSum = 0, farmSum = 0, extSum = 0;
+    records.forEach(function (r) {
+      var d = parseISO(r.date);
+      if (d < wk.start || d > wk.end) return;
+      if (r.type === 'in') inSum += Number(r.head);
+      else if (r.subtype === 'farm') farmSum += Number(r.head);
+      else if (r.subtype === 'external') extSum += Number(r.head);
+    });
+    var wkStartISO = toISO(wk.start);
+    var death = deathForWeek(wkStartISO);
+    var startStock = stockAsOf(wk.start - DAY_MS);
+    var endStock = startStock + inSum - farmSum - extSum - death;
+    return {
+      wk: wk, inSum: inSum, farmSum: farmSum, extSum: extSum, death: death,
+      startStock: startStock, endStock: endStock
+    };
+  }
+
+  function displayWeekRange() {
+    var baseMs = parseISO(settings.baseDate);
+    var minMs = baseMs, maxMs = todayMs() + 8 * 7 * DAY_MS;
+    records.forEach(function (r) {
+      var d = parseISO(r.date);
+      if (d < minMs) minMs = d;
+      if (d > maxMs) maxMs = d;
+    });
+    return { from: weekIndexOf(minMs), to: weekIndexOf(maxMs) };
+  }
+
+  // ---------- rendering ----------
+  function el(html) { var t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+
+  function render() {
+    document.body.classList.toggle('share-mode', shareMode);
+    document.querySelectorAll('.tab-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.tab === activeTab);
+    });
+    var view = document.getElementById('view');
+    view.innerHTML = activeTab === 'dash' ? renderDash() : renderCalendar();
+  }
+
+  function renderDash() {
+    var today = todayMs();
+    var curStock = stockAsOf(today);
+    var thisWeek = weekOf(today);
+    var thisWeekAgg = weekAggregate(thisWeek.idx);
+
+    var range = displayWeekRange();
+    var weekRows = [];
+    for (var i = range.from; i <= range.to; i++) weekRows.push(weekAggregate(i));
+
+    var recordRowsHtml = records.slice().sort(function (a, b) { return b.date < a.date ? -1 : (b.date > a.date ? 1 : 0); })
+      .map(function (r) {
+        var badge = r.type === 'in' ? '<span class="badge in">전입</span>'
+          : (r.subtype === 'farm' ? '<span class="badge farm">농장전출</span>' : '<span class="badge ext">외부판매</span>');
+        var stockAt = stockAsOf(parseISO(r.date));
+        var delRow = confirmingDeleteId === r.id
+          ? '<button class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button class="btn ghost small" data-action="cancelDelete">취소</button>'
+          : '<button class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
+        return '<tr><td class="left">' + fmtShort(parseISO(r.date)) + '</td><td class="left">' + weekOf(parseISO(r.date)).label + '</td><td class="left">' + badge + '</td>' +
+          '<td class="left">' + (r.type === 'in' ? IN_FARM_NAME : (r.farmName || '')) + '</td>' +
+          '<td class="mono">' + fmtNum(r.head) + '두</td>' +
+          '<td class="mono">' + fmtNum(stockAt) + '</td><td class="left">' + delRow + '</td></tr>';
+      }).join('');
+
+    var weekRowsHtml = weekRows.map(function (w) {
+      var hi = w.wk.idx === thisWeek.idx ? ' week-hi' : '';
+      var wkStartISO = toISO(w.wk.start);
+      var isPast = w.wk.end < today;
+      var deathTag = '<span style="font-size:10.5px;color:var(--text-faint);margin-left:4px">' + (isPast ? '실제' : '예상') + '</span>';
+      return '<tr class="' + hi.trim() + '"><td class="left">' + w.wk.label + '</td>' +
+        '<td class="left mono">' + fmtSlash(w.wk.start) + '~' + fmtSlash(w.wk.end) + '</td>' +
+        '<td class="mono">' + fmtNum(w.startStock) + '</td>' +
+        '<td class="mono">' + fmtNum(w.inSum) + '</td>' +
+        '<td><input class="inline-input" type="number" min="0" value="' + w.death + '" data-action="setDeath" data-week="' + wkStartISO + '">' + deathTag + '</td>' +
+        '<td class="mono">' + fmtNum(w.farmSum) + '</td>' +
+        '<td class="mono">' + fmtNum(w.extSum) + '</td>' +
+        '<td class="mono" style="font-weight:600">' + fmtNum(w.endStock) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    var queryDate = document.getElementById('stockQueryDate');
+    var queryVal = queryDate ? queryDate.value : toISO(today);
+
+    return '' +
+      '<div class="cards">' +
+        '<div class="card"><span class="label">현재 재고두수 (오늘 기준)</span><span class="value mono">' + fmtNum(curStock) + '두</span><span class="sub">' + fmtShort(today) + '</span></div>' +
+        '<div class="card"><span class="label">이번주 전입 (' + thisWeek.label + ')</span><span class="value mono">' + fmtNum(thisWeekAgg.inSum) + '두</span><span class="sub">' + fmtShort(thisWeek.start) + '~' + fmtShort(thisWeek.end) + '</span></div>' +
+        '<div class="card"><span class="label">이번주 전출</span><span class="value mono">' + fmtNum(thisWeekAgg.farmSum + thisWeekAgg.extSum) + '두</span><span class="sub">농장 ' + fmtNum(thisWeekAgg.farmSum) + ' · 외판 ' + fmtNum(thisWeekAgg.extSum) + '</span></div>' +
+      '</div>' +
+
+      '<section class="panel input-only">' +
+        '<h2>기준 재고 설정</h2>' +
+        '<p class="hint">특정 날짜의 실제 재고두수를 입력하면 이후 모든 계산의 출발점이 됩니다. 예상 폐사두수 기본값도 여기서 조정합니다.</p>' +
+        '<div class="field-row">' +
+          '<div class="field date"><label>기준일자</label><input type="date" id="baseDateInput" value="' + settings.baseDate + '" data-action="setBaseDate"></div>' +
+          '<div class="field num"><label>기준일 재고두수</label><input type="number" min="0" id="baseStockInput" value="' + settings.baseStock + '" data-action="setBaseStock"></div>' +
+          '<div class="field num"><label>주간 예상폐사 기본값</label><input type="number" min="0" id="defaultDeathInput" value="' + settings.defaultWeeklyDeath + '" data-action="setDefaultDeath"></div>' +
+        '</div>' +
+      '</section>' +
+
+      '<section class="panel input-only">' +
+        '<h2>전입 · 전출 입력</h2>' +
+        '<p class="hint">건별로 날짜, 구분, 두수를 입력하세요. 전입은 항상 "' + IN_FARM_NAME + '"에서 들어오므로 농장명이 고정됩니다. 저장 즉시 접속 중인 모든 사람 화면에 반영됩니다.</p>' +
+        '<form class="field-row" id="recordForm">' +
+          '<div class="field date"><label>날짜</label><input type="date" name="date" required value="' + toISO(today) + '"></div>' +
+          '<div class="field"><label>구분</label><select name="type" id="typeSelect"><option value="in">전입</option><option value="out">전출</option></select></div>' +
+          '<div class="field" id="subtypeField"><label>세부구분</label><select name="subtype" id="subtypeSelect" disabled><option value="farm">농장전출</option><option value="external">외부판매</option></select></div>' +
+          '<div class="field grow" id="farmField"><label>농장명</label><input type="text" name="farmName" id="farmNameInput" value="' + IN_FARM_NAME + '" disabled></div>' +
+          '<div class="field num"><label>두수</label><input type="number" name="head" min="1" required placeholder="0"></div>' +
+          '<button type="submit" class="btn">추가</button>' +
+        '</form>' +
+        '<div class="import-box">' +
+          '<div class="row">' +
+            '<button type="button" class="btn ghost small" data-action="triggerImport">엑셀 불러오기 (.xlsx / .csv)</button>' +
+            '<input type="file" id="importFileInput" accept=".xlsx,.csv" style="display:none">' +
+            '<span class="hint" style="margin:0">양식 파일을 채운 뒤 올리면 현재 목록을 그 내용으로 통째로 교체합니다.</span>' +
+          '</div>' +
+          (importBusy ? '<p class="hint" style="margin:8px 0 0">읽는 중…</p>' : '') +
+          (importError ? '<p class="hint" style="margin:8px 0 0;color:var(--danger)">' + importError + '</p>' : '') +
+          (pendingImport ? renderImportPreview() : '') +
+        '</div>' +
+      '</section>' +
+
+      '<section class="panel input-only">' +
+        '<h2>재고 조회</h2>' +
+        '<p class="hint">날짜를 선택하면 그 시점까지의 전입·전출·예상폐사를 반영한 재고두수를 계산합니다.</p>' +
+        '<div class="field-row">' +
+          '<div class="field date"><label>조회 날짜</label><input type="date" id="stockQueryDate" value="' + queryVal + '" data-action="queryStock"></div>' +
+          '<div class="card" style="min-width:180px"><span class="label">' + weekOf(parseISO(queryVal)).label + ' · ' + fmtShort(parseISO(queryVal)) + ' 기준</span><span class="value mono">' + fmtNum(stockAsOf(parseISO(queryVal))) + '두</span></div>' +
+        '</div>' +
+      '</section>' +
+
+      '<section class="panel">' +
+        '<h2>주차별 예상 물량</h2>' +
+        '<p class="hint">시작재고·종료재고는 자동 계산됩니다. 폐사두수는 지난 주차는 실제 값을, 앞으로 올 주차는 예상 값을 입력합니다.</p>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+          '<th class="left">주차</th><th class="left">기간</th><th>시작재고</th><th>전입</th><th>폐사두수</th><th>농장전출</th><th>외부판매</th><th>종료재고</th>' +
+        '</tr></thead><tbody>' + (weekRowsHtml || '<tr><td colspan="8" class="empty">표시할 주차가 없습니다.</td></tr>') + '</tbody></table></div>' +
+      '</section>' +
+
+      '<section class="panel input-only">' +
+        '<h2>입력 내역</h2>' +
+        '<div class="table-wrap"><table><thead><tr>' +
+          '<th class="left">날짜</th><th class="left">주차</th><th class="left">구분</th><th class="left">농장명</th><th>두수</th><th>당시 재고</th><th class="left"></th>' +
+        '</tr></thead><tbody>' + (recordRowsHtml || '<tr><td colspan="7" class="empty">아직 입력된 내역이 없습니다.</td></tr>') + '</tbody></table></div>' +
+      '</section>';
+  }
+
+  function renderImportPreview() {
+    var p = pendingImport;
+    var warnHtml = p.warnings.length
+      ? '<ul class="warn-list">' + p.warnings.map(function (w) { return '<li>' + w + '</li>'; }).join('') + '</ul>'
+      : '';
+    return '<div style="margin-top:10px">' +
+      '<p class="hint" style="margin:0 0 6px;color:var(--text)"><strong>' + p.fileName + '</strong>에서 ' + p.records.length + '건을 읽었습니다' +
+      (p.warnings.length ? ' (건너뜀 ' + p.warnings.length + '건)' : '') + '. 확인을 누르면 현재 저장된 전체 전입·전출 내역이 이 파일 내용으로 교체됩니다.</p>' +
+      warnHtml +
+      '<div class="row" style="margin-top:8px">' +
+        '<button type="button" class="btn" data-action="confirmImport">이 내용으로 전체 교체</button>' +
+        '<button type="button" class="btn ghost small" data-action="cancelImport">취소</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderCalendar() {
+    var y = calMonthCursor.y, m = calMonthCursor.m;
+    var firstOfMonth = Date.UTC(y, m, 1);
+    var lastOfMonth = Date.UTC(y, m + 1, 0);
+    var gridStartIdx = weekIndexOf(firstOfMonth);
+    var gridEndIdx = weekIndexOf(lastOfMonth);
+
+    var byDay = {};
+    records.forEach(function (r) {
+      var d = parseISO(r.date);
+      if (!byDay[d]) byDay[d] = [];
+      byDay[d].push(r);
+    });
+    var MAX_CHIPS = 4;
+
+    var todayStamp = todayMs();
+    var rows = '';
+    for (var idx = gridStartIdx; idx <= gridEndIdx; idx++) {
+      var wk = computeWeek(idx);
+      for (var i = 0; i < 7; i++) {
+        var dms = wk.start + i * DAY_MS;
+        var dDate = new Date(dms);
+        var outside = dDate.getUTCMonth() !== m;
+        var cls = 'cal-day' + (outside ? ' outside' : '') + (dms === todayStamp ? ' today' : '');
+        var dayRecs = byDay[dms] || [];
+        var chips = dayRecs.slice(0, MAX_CHIPS).map(function (r) {
+          if (r.type === 'in') return '<span class="cal-chip in">전입 +' + fmtNum(r.head) + '</span>';
+          var cls2 = r.subtype === 'farm' ? 'farm' : 'ext';
+          var label = r.subtype === 'farm' ? '농장전출' : '외부판매';
+          var fname = r.farmName ? '<span class="fname"> · ' + r.farmName + '</span>' : '';
+          return '<span class="cal-chip ' + cls2 + '">' + label + ' -' + fmtNum(r.head) + fname + '</span>';
+        }).join('');
+        if (dayRecs.length > MAX_CHIPS) chips += '<span class="cal-chip more">+' + (dayRecs.length - MAX_CHIPS) + '건 더</span>';
+        rows += '<div class="' + cls + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + '</div>';
+      }
+    }
+    var dowHtml = WEEKDAY_KR.map(function (w) { return '<div class="cal-dow">' + w + '</div>'; }).join('');
+
+    return '' +
+      '<section class="panel">' +
+        '<div class="cal-toolbar">' +
+          '<button class="btn ghost small" data-action="calPrev">◀</button>' +
+          '<span class="month-label">' + y + '년 ' + (m + 1) + '월</span>' +
+          '<button class="btn ghost small" data-action="calNext">▶</button>' +
+          (shareMode ? '' : '<button class="btn ghost small" data-action="calToday">오늘</button>') +
+          '<button class="btn ' + (shareMode ? '' : 'ghost') + ' small" id="shareToggle" data-action="toggleShare">' + (shareMode ? '✕ 닫기' : '공유용 화면') + '</button>' +
+        '</div>' +
+        '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
+        '<div class="legend">' +
+          '<span class="sw"><span class="dot2" style="background:var(--in)"></span>전입</span>' +
+          '<span class="sw"><span class="dot2" style="background:var(--out-farm)"></span>농장전출</span>' +
+          '<span class="sw"><span class="dot2" style="background:var(--out-ext)"></span>외부판매</span>' +
+        '</div>' +
+      '</section>';
+  }
+
+  // ---------- excel/csv import (pure browser APIs, no external libraries) ----------
+  var TYPE_MAP = { '전입': 'in', '전출': 'out' };
+  var SUBTYPE_MAP = { '농장전출': 'farm', '외부판매': 'external' };
+
+  function buildRecordsFromRows(rows) {
+    // rows: array of [일자, 구분, 세부구분, 농장명, 두수] starting at index 1 = header
+    var out = [], warnings = [];
+    for (var r = 2; r < rows.length; r++) {
+      var row = rows[r];
+      if (!row || row.every(function (v) { return v === undefined || v === null || String(v).trim() === ''; })) continue;
+      var date = (row[0] == null ? '' : String(row[0])).trim();
+      var typeKr = (row[1] == null ? '' : String(row[1])).trim();
+      var subtypeKr = (row[2] == null ? '' : String(row[2])).trim();
+      var farmName = (row[3] == null ? '' : String(row[3])).trim();
+      var head = Number(row[4]);
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { warnings.push((r) + '행: 일자 형식이 YYYY-MM-DD가 아니어서 건너뜀 ("' + date + '")'); continue; }
+      if (!TYPE_MAP[typeKr]) { warnings.push(r + '행: 구분이 "전입"/"전출"이 아니어서 건너뜀 ("' + typeKr + '")'); continue; }
+      if (!head || head <= 0) { warnings.push(r + '행: 두수가 없어 건너뜀'); continue; }
+
+      var rec = { date: date, type: TYPE_MAP[typeKr], head: head };
+      if (rec.type === 'out') {
+        if (!SUBTYPE_MAP[subtypeKr]) { warnings.push(r + '행: 세부구분이 "농장전출"/"외부판매"가 아니어서 건너뜀 ("' + subtypeKr + '")'); continue; }
+        rec.subtype = SUBTYPE_MAP[subtypeKr];
+        rec.farmName = farmName;
+      } else {
+        rec.subtype = null;
+        rec.farmName = IN_FARM_NAME;
+      }
+      out.push(rec);
+    }
+    return { records: out, warnings: warnings };
+  }
+
+  function parseCsvText(text) {
+    var lines = text.replace(/^﻿/, '').replace(/\r/g, '').split('\n').filter(function (l) { return l.length > 0; });
+    // index 0 left empty so rows[1] = header, rows[2] = first data row —
+    // matches the 1-based spreadsheet-row indexing buildRecordsFromRows expects for xlsx.
+    var rows = [undefined];
+    lines.forEach(function (line) {
+      var result = [], cur = '', inQuotes = false;
+      for (var i = 0; i < line.length; i++) {
+        var ch = line[i];
+        if (inQuotes) {
+          if (ch === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else inQuotes = false; }
+          else cur += ch;
+        } else if (ch === '"') inQuotes = true;
+        else if (ch === ',') { result.push(cur); cur = ''; }
+        else cur += ch;
+      }
+      result.push(cur);
+      rows.push(result);
+    });
+    return rows;
+  }
+
+  async function inflateRawBrowser(bytes) {
+    if (typeof DecompressionStream === 'undefined') {
+      throw new Error('이 브라우저는 xlsx 압축 해제를 지원하지 않습니다. 최신 Chrome/Edge를 사용하거나 CSV로 저장해 올려주세요.');
+    }
+    var ds = new DecompressionStream('deflate-raw');
+    var writer = ds.writable.getWriter();
+    writer.write(bytes);
+    writer.close();
+    var reader = ds.readable.getReader();
+    var chunks = [], total = 0;
+    for (;;) {
+      var res = await reader.read();
+      if (res.done) break;
+      chunks.push(res.value); total += res.value.length;
+    }
+    var out = new Uint8Array(total), off = 0;
+    chunks.forEach(function (c) { out.set(c, off); off += c.length; });
+    return out;
+  }
+
+  function findEOCD(bytes) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var maxBack = Math.min(bytes.length, 65557);
+    for (var i = bytes.length - 22; i >= bytes.length - maxBack && i >= 0; i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) return i;
+    }
+    throw new Error('올바른 xlsx(zip) 파일이 아닙니다.');
+  }
+
+  function parseZipEntries(bytes) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var eocdOff = findEOCD(bytes);
+    var cdOffset = dv.getUint32(eocdOff + 16, true);
+    var cdSize = dv.getUint32(eocdOff + 12, true);
+    var entries = {}, p = cdOffset, end = cdOffset + cdSize;
+    var decoder = new TextDecoder('utf-8');
+    while (p < end) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      var compMethod = dv.getUint16(p + 10, true);
+      var compSize = dv.getUint32(p + 20, true);
+      var nameLen = dv.getUint16(p + 28, true);
+      var extraLen = dv.getUint16(p + 30, true);
+      var commentLen = dv.getUint16(p + 32, true);
+      var localHeaderOffset = dv.getUint32(p + 42, true);
+      var name = decoder.decode(bytes.subarray(p + 46, p + 46 + nameLen));
+      entries[name] = { compMethod: compMethod, compSize: compSize, localHeaderOffset: localHeaderOffset };
+      p += 46 + nameLen + extraLen + commentLen;
+    }
+    return entries;
+  }
+
+  async function extractZipEntry(bytes, entry) {
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var lp = entry.localHeaderOffset;
+    if (dv.getUint32(lp, true) !== 0x04034b50) throw new Error('xlsx 파일 구조가 손상되었습니다.');
+    var nameLen = dv.getUint16(lp + 26, true);
+    var extraLen = dv.getUint16(lp + 28, true);
+    var dataStart = lp + 30 + nameLen + extraLen;
+    var raw = bytes.subarray(dataStart, dataStart + entry.compSize);
+    if (entry.compMethod === 0) return raw;
+    if (entry.compMethod === 8) return await inflateRawBrowser(raw);
+    throw new Error('지원하지 않는 압축 방식입니다.');
+  }
+
+  function colLetterToIndex(ref) {
+    var letters = ref.match(/^[A-Z]+/)[0];
+    var idx = 0;
+    for (var i = 0; i < letters.length; i++) idx = idx * 26 + (letters.charCodeAt(i) - 64);
+    return idx;
+  }
+
+  function parseSharedStrings(xmlText) {
+    var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+    var siList = doc.getElementsByTagName('si');
+    var arr = [];
+    for (var i = 0; i < siList.length; i++) {
+      var tNodes = siList[i].getElementsByTagName('t');
+      var text = '';
+      for (var j = 0; j < tNodes.length; j++) text += tNodes[j].textContent;
+      arr.push(text);
+    }
+    return arr;
+  }
+
+  function parseSheetRows(xmlText, sharedStrings) {
+    var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+    var rowNodes = doc.getElementsByTagName('row');
+    var rows = [];
+    for (var i = 0; i < rowNodes.length; i++) {
+      var rn = rowNodes[i];
+      var rowNum = parseInt(rn.getAttribute('r'), 10);
+      var cells = rn.getElementsByTagName('c');
+      var rowArr = [];
+      for (var j = 0; j < cells.length; j++) {
+        var c = cells[j];
+        var ref = c.getAttribute('r');
+        if (!ref) continue;
+        var colIdx = colLetterToIndex(ref);
+        var type = c.getAttribute('t');
+        var value = '';
+        if (type === 'inlineStr') {
+          var isNode = c.getElementsByTagName('is')[0];
+          value = isNode ? isNode.textContent : '';
+        } else {
+          var vNode = c.getElementsByTagName('v')[0];
+          if (vNode) {
+            var raw = vNode.textContent;
+            value = (type === 's') ? (sharedStrings[parseInt(raw, 10)] || '') : raw;
+          }
+        }
+        rowArr[colIdx - 1] = value;
+      }
+      rows[rowNum] = rowArr;
+    }
+    return rows;
+  }
+
+  async function resolveSheetPath(buf, entries, sheetName) {
+    try {
+      var wbBytes = await extractZipEntry(buf, entries['xl/workbook.xml']);
+      var wbDoc = new DOMParser().parseFromString(new TextDecoder('utf-8').decode(wbBytes), 'application/xml');
+      var sheetNodes = wbDoc.getElementsByTagName('sheet');
+      var targetRid = null;
+      for (var i = 0; i < sheetNodes.length; i++) {
+        if (sheetNodes[i].getAttribute('name') === sheetName) {
+          targetRid = sheetNodes[i].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id')
+            || sheetNodes[i].getAttribute('r:id');
+          break;
+        }
+      }
+      if (!targetRid) return null;
+      var relsBytes = await extractZipEntry(buf, entries['xl/_rels/workbook.xml.rels']);
+      var relsDoc = new DOMParser().parseFromString(new TextDecoder('utf-8').decode(relsBytes), 'application/xml');
+      var relNodes = relsDoc.getElementsByTagName('Relationship');
+      for (var k = 0; k < relNodes.length; k++) {
+        if (relNodes[k].getAttribute('Id') === targetRid) {
+          var target = relNodes[k].getAttribute('Target').replace(/^\/?xl\//, '').replace(/^\.?\//, '');
+          return 'xl/' + target;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async function importXlsxFile(file) {
+    var buf = new Uint8Array(await file.arrayBuffer());
+    var entries = parseZipEntries(buf);
+    var sheetPath = await resolveSheetPath(buf, entries, '전입전출입력');
+    if (!sheetPath || !entries[sheetPath]) sheetPath = 'xl/worksheets/sheet1.xml';
+    if (!entries[sheetPath]) throw new Error('시트를 찾을 수 없습니다. 제공된 양식 파일이 맞는지 확인해 주세요.');
+
+    var sharedStrings = [];
+    if (entries['xl/sharedStrings.xml']) {
+      var ssBytes = await extractZipEntry(buf, entries['xl/sharedStrings.xml']);
+      sharedStrings = parseSharedStrings(new TextDecoder('utf-8').decode(ssBytes));
+    }
+    var sheetBytes = await extractZipEntry(buf, entries[sheetPath]);
+    var rows = parseSheetRows(new TextDecoder('utf-8').decode(sheetBytes), sharedStrings);
+    return buildRecordsFromRows(rows);
+  }
+
+  function importCsvFile(text) {
+    var rows = parseCsvText(text);
+    return buildRecordsFromRows(rows);
+  }
+
+  async function handleImportFile(file) {
+    if (!file) return;
+    importError = null;
+    importBusy = true;
+    pendingImport = null;
+    render();
+    try {
+      var result;
+      if (/\.csv$/i.test(file.name)) {
+        result = importCsvFile(await file.text());
+      } else {
+        result = await importXlsxFile(file);
+      }
+      importBusy = false;
+      if (!result.records.length) {
+        importError = '가져올 수 있는 행이 없습니다. 예시 행을 지우고 실제 데이터를 입력했는지 확인해 주세요.';
+      } else {
+        pendingImport = { records: result.records, warnings: result.warnings, fileName: file.name };
+      }
+    } catch (err) {
+      importBusy = false;
+      importError = (err && err.message) ? err.message : '파일을 읽는 중 오류가 발생했습니다.';
+    }
+    render();
+  }
+
+  // ---------- event wiring ----------
+  var app = document.getElementById('app');
+
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-action]');
+    if (!b) return;
+    var action = b.dataset.action;
+    if (action === 'setTab') { activeTab = b.dataset.tab; render(); }
+    else if (action === 'calPrev') { calMonthCursor.m--; if (calMonthCursor.m < 0) { calMonthCursor.m = 11; calMonthCursor.y--; } render(); }
+    else if (action === 'calNext') { calMonthCursor.m++; if (calMonthCursor.m > 11) { calMonthCursor.m = 0; calMonthCursor.y++; } render(); }
+    else if (action === 'calToday') { var t = new Date(); calMonthCursor = { y: t.getFullYear(), m: t.getMonth() }; render(); }
+    else if (action === 'toggleShare') { shareMode = !shareMode; render(); }
+    else if (action === 'askDelete') { confirmingDeleteId = b.dataset.id; render(); }
+    else if (action === 'cancelDelete') { confirmingDeleteId = null; render(); }
+    else if (action === 'confirmDelete') { var id = b.dataset.id; confirmingDeleteId = null; deleteRecord(id); }
+    else if (action === 'triggerImport') { var fi = document.getElementById('importFileInput'); if (fi) fi.click(); }
+    else if (action === 'cancelImport') { pendingImport = null; importError = null; render(); }
+    else if (action === 'confirmImport') {
+      var toApply = pendingImport;
+      pendingImport = null; render();
+      if (toApply) replaceAllRecords(toApply.records);
+    }
+  });
+
+  app.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.id === 'typeSelect') {
+      var isOut = t.value === 'out';
+      var subtypeSel = document.getElementById('subtypeSelect');
+      var farmInput = document.getElementById('farmNameInput');
+      subtypeSel.disabled = !isOut;
+      farmInput.disabled = !isOut;
+      farmInput.placeholder = isOut ? '예: 풍년농장' : '';
+      farmInput.value = isOut ? '' : IN_FARM_NAME;
+      return;
+    }
+    if (t.id === 'importFileInput') {
+      handleImportFile(t.files && t.files[0]);
+      t.value = '';
+      return;
+    }
+    var action = t.dataset.action;
+    if (!action) return;
+    if (action === 'setBaseDate') saveSettings({ baseDate: t.value });
+    else if (action === 'setBaseStock') saveSettings({ baseStock: Number(t.value) || 0 });
+    else if (action === 'setDefaultDeath') saveSettings({ defaultWeeklyDeath: Number(t.value) || 0 });
+    else if (action === 'setDeath') {
+      var wd = Object.assign({}, settings.weeklyDeaths);
+      wd[t.dataset.week] = Number(t.value) || 0;
+      saveSettings({ weeklyDeaths: wd });
+    } else if (action === 'queryStock') { render(); }
+  });
+
+  app.addEventListener('submit', function (e) {
+    if (e.target.id !== 'recordForm') return;
+    e.preventDefault();
+    var f = new FormData(e.target);
+    var type = f.get('type');
+    var head = Number(f.get('head'));
+    if (!head || head <= 0) return;
+    var rec = {
+      date: f.get('date'),
+      type: type,
+      subtype: type === 'out' ? f.get('subtype') : null,
+      farmName: type === 'out' ? (f.get('farmName') || '').trim() : IN_FARM_NAME,
+      head: head
+    };
+    addRecord(rec);
+    e.target.reset();
+    document.querySelector('#recordForm [name="date"]').value = toISO(todayMs());
+    document.getElementById('subtypeSelect').disabled = true;
+    document.getElementById('farmNameInput').value = IN_FARM_NAME;
+    document.getElementById('farmNameInput').disabled = true;
+  });
+
+  render();
+  initStore();
+})();
+</script>
