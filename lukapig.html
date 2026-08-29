@@ -526,7 +526,7 @@
     var recordRowsHtml = records.slice().sort(function (a, b) { return b.date < a.date ? -1 : (b.date > a.date ? 1 : 0); })
       .map(function (r) {
         var badge = r.type === 'in' ? '<span class="badge in">전입</span>'
-          : (r.subtype === 'farm' ? '<span class="badge farm">농장전출</span>' : '<span class="badge ext">외부판매</span>');
+          : (r.subtype === 'farm' ? '<span class="badge farm">전출</span>' : '<span class="badge ext">외부판매</span>');
         var stockAt = stockAsOf(parseISO(r.date));
         var delRow = confirmingDeleteId === r.id
           ? '<button class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button class="btn ghost small" data-action="cancelDelete">취소</button>'
@@ -576,8 +576,7 @@
         '<p class="hint">건별로 날짜, 구분, 두수를 입력하세요. 전입은 항상 "' + IN_FARM_NAME + '"에서 들어오므로 농장명이 고정됩니다. 저장 즉시 접속 중인 모든 사람 화면에 반영됩니다.</p>' +
         '<form class="field-row" id="recordForm">' +
           '<div class="field date"><label>날짜</label><input type="date" name="date" required value="' + toISO(today) + '"></div>' +
-          '<div class="field"><label>구분</label><select name="type" id="typeSelect"><option value="in">전입</option><option value="out">전출</option></select></div>' +
-          '<div class="field" id="subtypeField"><label>세부구분</label><select name="subtype" id="subtypeSelect" disabled><option value="farm">농장전출</option><option value="external">외부판매</option></select></div>' +
+          '<div class="field"><label>구분</label><select name="kind" id="typeSelect"><option value="in">전입</option><option value="out_farm">전출</option><option value="out_external">외부판매</option></select></div>' +
           '<div class="field grow" id="farmField"><label>농장명</label><input type="text" name="farmName" id="farmNameInput" value="' + IN_FARM_NAME + '" disabled></div>' +
           '<div class="field num"><label>두수</label><input type="number" name="head" min="1" required placeholder="0"></div>' +
           '<button type="submit" class="btn">추가</button>' +
@@ -607,7 +606,7 @@
         '<h2>주차별 예상 물량</h2>' +
         '<p class="hint">시작재고·종료재고는 자동 계산됩니다. 폐사두수는 지난 주차는 실제 값을, 앞으로 올 주차는 예상 값을 입력합니다.</p>' +
         '<div class="table-wrap"><table><thead><tr>' +
-          '<th class="left">주차</th><th class="left">기간</th><th>시작재고</th><th>전입</th><th>폐사두수</th><th>농장전출</th><th>외부판매</th><th>종료재고</th>' +
+          '<th class="left">주차</th><th class="left">기간</th><th>시작재고</th><th>전입</th><th>폐사두수</th><th>전출</th><th>외부판매</th><th>종료재고</th>' +
         '</tr></thead><tbody>' + (weekRowsHtml || '<tr><td colspan="8" class="empty">표시할 주차가 없습니다.</td></tr>') + '</tbody></table></div>' +
       '</section>' +
 
@@ -663,7 +662,7 @@
         var chips = dayRecs.slice(0, MAX_CHIPS).map(function (r) {
           if (r.type === 'in') return '<span class="cal-chip in">전입 +' + fmtNum(r.head) + '</span>';
           var cls2 = r.subtype === 'farm' ? 'farm' : 'ext';
-          var label = r.subtype === 'farm' ? '농장전출' : '외부판매';
+          var label = r.subtype === 'farm' ? '전출' : '외부판매';
           var fname = r.farmName ? '<span class="fname"> · ' + r.farmName + '</span>' : '';
           return '<span class="cal-chip ' + cls2 + '">' + label + ' -' + fmtNum(r.head) + fname + '</span>';
         }).join('');
@@ -685,7 +684,7 @@
         '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
         '<div class="legend">' +
           '<span class="sw"><span class="dot2" style="background:var(--in)"></span>전입</span>' +
-          '<span class="sw"><span class="dot2" style="background:var(--out-farm)"></span>농장전출</span>' +
+          '<span class="sw"><span class="dot2" style="background:var(--out-farm)"></span>전출</span>' +
           '<span class="sw"><span class="dot2" style="background:var(--out-ext)"></span>외부판매</span>' +
         '</div>' +
       '</section>';
@@ -966,10 +965,8 @@
   app.addEventListener('change', function (e) {
     var t = e.target;
     if (t.id === 'typeSelect') {
-      var isOut = t.value === 'out';
-      var subtypeSel = document.getElementById('subtypeSelect');
+      var isOut = t.value !== 'in';
       var farmInput = document.getElementById('farmNameInput');
-      subtypeSel.disabled = !isOut;
       farmInput.disabled = !isOut;
       farmInput.placeholder = isOut ? '예: 풍년농장' : '';
       farmInput.value = isOut ? '' : IN_FARM_NAME;
@@ -994,20 +991,19 @@
     if (e.target.id !== 'recordForm') return;
     e.preventDefault();
     var f = new FormData(e.target);
-    var type = f.get('type');
+    var kind = f.get('kind');
     var head = Number(f.get('head'));
     if (!head || head <= 0) return;
     var rec = {
       date: f.get('date'),
-      type: type,
-      subtype: type === 'out' ? f.get('subtype') : null,
-      farmName: type === 'out' ? (f.get('farmName') || '').trim() : IN_FARM_NAME,
+      type: kind === 'in' ? 'in' : 'out',
+      subtype: kind === 'out_farm' ? 'farm' : (kind === 'out_external' ? 'external' : null),
+      farmName: kind === 'in' ? IN_FARM_NAME : (f.get('farmName') || '').trim(),
       head: head
     };
     addRecord(rec);
     e.target.reset();
     document.querySelector('#recordForm [name="date"]').value = toISO(todayMs());
-    document.getElementById('subtypeSelect').disabled = true;
     document.getElementById('farmNameInput').value = IN_FARM_NAME;
     document.getElementById('farmNameInput').disabled = true;
   });
