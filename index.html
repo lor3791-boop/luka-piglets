@@ -1,4 +1,10 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>루카 후기자돈사 전입출 현황판</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐖</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -92,6 +98,25 @@
   input, select, button { font-size: 14px; }
 
   #app { max-width: 1080px; margin: 0 auto; padding: 0 16px 48px; }
+
+  /* pin gate */
+  .pin-gate {
+    position: fixed; inset: 0; z-index: 9999; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .pin-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px 26px; width: 100%; max-width: 320px; text-align: center;
+    box-shadow: 0 4px 18px var(--shadow);
+  }
+  .pin-box h2 { font-size: 17px; font-weight: 700; color: var(--accent-strong); margin-bottom: 4px; }
+  .pin-box p { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; }
+  .pin-box form { display: flex; gap: 8px; }
+  .pin-box input {
+    flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+    border-radius: 7px; padding: 9px 10px; font-size: 16px; letter-spacing: .1em; text-align: center;
+  }
+  .pin-error { color: var(--danger); font-size: 12.5px; margin: 10px 0 0 !important; }
 
   /* header */
   .topbar {
@@ -215,6 +240,20 @@
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
+</head>
+<body>
+
+<div id="pinGate" class="pin-gate">
+  <div class="pin-box">
+    <h2>루카 후기자돈사</h2>
+    <p>공유 비밀번호를 입력하세요</p>
+    <form id="pinForm">
+      <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" required>
+      <button type="submit" class="btn">입장</button>
+    </form>
+    <p id="pinError" class="pin-error" style="display:none">비밀번호가 올바르지 않습니다.</p>
+  </div>
+</div>
 
 <div id="app">
   <div class="topbar">
@@ -234,7 +273,80 @@
   <footer class="note">주차 기준: 일요일 시작</footer>
 </div>
 
-<script>
+<script type="module">
+"use strict";
+
+// ---------- pin gate ----------
+(function () {
+  var APP_PIN = '9323';
+  var PIN_KEY = 'luka_pin_ok_v1';
+  var gate = document.getElementById('pinGate');
+  if (localStorage.getItem(PIN_KEY) === '1') { gate.style.display = 'none'; return; }
+  document.getElementById('pinForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var val = document.getElementById('pinInput').value.trim();
+    if (val === APP_PIN) {
+      try { localStorage.setItem(PIN_KEY, '1'); } catch (e) {}
+      gate.style.display = 'none';
+    } else {
+      document.getElementById('pinError').style.display = 'block';
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinInput').focus();
+    }
+  });
+})();
+
+// ---------- firebase (shared storage, no sign-in required) ----------
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot,
+  collection, addDoc, getDocs, query, orderBy as fsOrderBy, limit as fsLimit
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyD16GVE23OVqodlFHx8h1e0FhWFDz2wLL8",
+  authDomain: "luka-piglets.firebaseapp.com",
+  projectId: "luka-piglets",
+  storageBucket: "luka-piglets.firebasestorage.app",
+  messagingSenderId: "895417903466",
+  appId: "1:895417903466:web:61e31bdc49d805dbc81d13"
+};
+
+var dbAdapter = null;
+try {
+  var fbApp = initializeApp(firebaseConfig);
+  var fsDb = getFirestore(fbApp);
+
+  var wrapDocSnap = function (snap) { return { exists: snap.exists(), data: function () { return snap.data(); } }; };
+  var wrapQuerySnap = function (snap) { return { docs: snap.docs.map(function (d) { return { id: d.id, data: function () { return d.data(); } }; }) }; };
+  var wrapDocRef = function (ref) {
+    return {
+      id: ref.id,
+      get: function () { return getDoc(ref).then(wrapDocSnap); },
+      set: function (data) { return setDoc(ref, data); },
+      delete: function () { return deleteDoc(ref); },
+      onSnapshot: function (next, err) { return onSnapshot(ref, function (s) { next(wrapDocSnap(s)); }, err); }
+    };
+  };
+  var wrapQuery = function (path, q) {
+    return {
+      doc: function (id) { return wrapDocRef(doc(fsDb, path + '/' + id)); },
+      add: function (data) { return addDoc(collection(fsDb, path), data).then(wrapDocRef); },
+      orderBy: function (field, dir) { return wrapQuery(path, query(q, fsOrderBy(field, dir || 'asc'))); },
+      limit: function (n) { return wrapQuery(path, query(q, fsLimit(n))); },
+      get: function () { return getDocs(q).then(wrapQuerySnap); },
+      onSnapshot: function (next, err) { return onSnapshot(q, function (s) { next(wrapQuerySnap(s)); }, err); }
+    };
+  };
+  dbAdapter = {
+    doc: function (path) { return wrapDocRef(doc(fsDb, path)); },
+    collection: function (path) { return wrapQuery(path, collection(fsDb, path)); }
+  };
+} catch (e) {
+  dbAdapter = null;
+}
+
+// ---------- app ----------
 (function () {
   "use strict";
 
@@ -345,9 +457,7 @@
   }
 
   async function initStore() {
-    try {
-      db = (window.claude && typeof window.claude.use === 'function') ? await window.claude.use('db') : null;
-    } catch (e) { db = null; }
+    db = dbAdapter;
     if (!db) {
       useLocal = true;
       loadLocal();
@@ -483,8 +593,6 @@
   }
 
   // ---------- rendering ----------
-  function el(html) { var t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
-
   function render() {
     document.body.classList.toggle('share-mode', shareMode);
     document.querySelectorAll('.tab-btn').forEach(function (b) {
@@ -1001,3 +1109,5 @@
   initStore();
 })();
 </script>
+</body>
+</html>
