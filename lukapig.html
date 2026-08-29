@@ -243,6 +243,8 @@
   var ANCHOR_MS = Date.UTC(2026, 0, 4); // 2026-01-04, Sunday — matches 수급계획 파일 기준일
   var WEEKDAY_KR = ['일','월','화','수','목','금','토'];
   var IN_FARM_NAME = '익산 자돈사';
+  var BASE_DATE_ISO = '2026-08-16';
+  var BASE_STOCK = 1961;
 
   function todayMs() {
     var d = new Date();
@@ -312,8 +314,6 @@
 
   function defaultSettings() {
     return {
-      baseDate: '2026-08-16',
-      baseStock: 1961,
       defaultWeeklyDeath: 20,
       weeklyDeaths: {}
     };
@@ -417,7 +417,7 @@
       return { date: parseISO(r.date), delta: delta, kind: 'tx', ref: r };
     });
     // synthetic weekly death deductions, from base week through maxMs's week
-    var baseMs = parseISO(settings.baseDate);
+    var baseMs = parseISO(BASE_DATE_ISO);
     var startIdx = weekIndexOf(baseMs);
     var endIdx = weekIndexOf(maxMs);
     for (var idx = startIdx; idx <= endIdx; idx++) {
@@ -435,10 +435,10 @@
   }
 
   function stockAsOf(queryMs) {
-    var baseMs = parseISO(settings.baseDate);
+    var baseMs = parseISO(BASE_DATE_ISO);
     var horizon = Math.max(queryMs, baseMs, todayMs() + 60 * DAY_MS);
     var ledger = buildLedger(horizon);
-    var stock = settings.baseStock;
+    var stock = BASE_STOCK;
     if (queryMs >= baseMs) {
       for (var i = 0; i < ledger.length; i++) {
         if (ledger[i].date >= baseMs && ledger[i].date <= queryMs) stock += ledger[i].delta;
@@ -472,7 +472,7 @@
   }
 
   function displayWeekRange() {
-    var baseMs = parseISO(settings.baseDate);
+    var baseMs = parseISO(BASE_DATE_ISO);
     var minMs = baseMs, maxMs = todayMs() + 8 * 7 * DAY_MS;
     records.forEach(function (r) {
       var d = parseISO(r.date);
@@ -545,11 +545,9 @@
       '</div>' +
 
       '<section class="panel input-only">' +
-        '<h2>기준 재고 설정</h2>' +
-        '<p class="hint">특정 날짜의 실제 재고두수를 입력하면 이후 모든 계산의 출발점이 됩니다. 예상 폐사두수 기본값도 여기서 조정합니다.</p>' +
+        '<h2>예상 폐사두수 설정</h2>' +
+        '<p class="hint">주차별 폐사두수 기본값입니다. 각 주차 표에서 실제 값으로 개별 수정할 수 있습니다.</p>' +
         '<div class="field-row">' +
-          '<div class="field date"><label>기준일자</label><input type="date" id="baseDateInput" value="' + settings.baseDate + '" data-action="setBaseDate"></div>' +
-          '<div class="field num"><label>기준일 재고두수</label><input type="number" min="0" id="baseStockInput" value="' + settings.baseStock + '" data-action="setBaseStock"></div>' +
           '<div class="field num"><label>주간 예상폐사 기본값</label><input type="number" min="0" id="defaultDeathInput" value="' + settings.defaultWeeklyDeath + '" data-action="setDefaultDeath"></div>' +
         '</div>' +
       '</section>' +
@@ -965,9 +963,7 @@
     }
     var action = t.dataset.action;
     if (!action) return;
-    if (action === 'setBaseDate') saveSettings({ baseDate: t.value });
-    else if (action === 'setBaseStock') saveSettings({ baseStock: Number(t.value) || 0 });
-    else if (action === 'setDefaultDeath') saveSettings({ defaultWeeklyDeath: Number(t.value) || 0 });
+    if (action === 'setDefaultDeath') saveSettings({ defaultWeeklyDeath: Number(t.value) || 0 });
     else if (action === 'setDeath') {
       var wd = Object.assign({}, settings.weeklyDeaths);
       wd[t.dataset.week] = Number(t.value) || 0;
