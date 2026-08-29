@@ -224,6 +224,7 @@
   .cal-chip.farm { background: var(--out-farm-soft); color: var(--out-farm); }
   .cal-chip.ext { background: var(--out-ext-soft); color: var(--out-ext); }
   .cal-chip.more { background: transparent; color: var(--text-faint); font-weight: 500; }
+  .cal-stock { font-size: 9.5px; color: var(--text-faint); margin-top: auto; padding-top: 2px; }
   .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 12.5px; color: var(--text-muted); align-items: center; }
   .legend .sw { display: inline-flex; align-items: center; gap: 5px; }
   .legend .dot2 { width: 9px; height: 9px; border-radius: 3px; }
@@ -232,9 +233,9 @@
   .import-box .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .import-box .warn-list { font-size: 12.5px; color: var(--text-muted); margin: 8px 0 0; padding-left: 18px; max-height: 120px; overflow-y: auto; }
 
-  .share-mode .topbar .tabs, .share-mode .topbar .sync-pill { display: none !important; }
-  .share-mode section.panel.input-only { display: none !important; }
-  .share-mode #shareToggle { font-weight: 700; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 3px; }
+  .panel-head h2 { margin-bottom: 0; }
+  .panel-head .count { font-weight: 500; color: var(--text-faint); font-size: 12.5px; }
 
   footer.note { font-size: 12px; color: var(--text-faint); text-align: center; padding: 20px 0 4px; }
 
@@ -418,11 +419,16 @@ try {
   var records = [];
   var activeTab = 'dash';
   var calMonthCursor = (function () { var t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
-  var shareMode = false;
+  var calendarCopyState = null;
   var confirmingDeleteId = null;
   var pendingImport = null;
   var importBusy = false;
   var importError = null;
+  var recordsExpanded = false;
+  var recordFilterMonth = '';
+  var recordFilterKind = '';
+  var recordFilterFarm = '';
+  var weekFilterMonth = '';
 
   function defaultSettings() {
     return {
@@ -613,12 +619,15 @@ try {
 
   // ---------- rendering ----------
   function render() {
-    document.body.classList.toggle('share-mode', shareMode);
     document.querySelectorAll('.tab-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.tab === activeTab);
     });
     var view = document.getElementById('view');
     view.innerHTML = activeTab === 'dash' ? renderDash() : renderCalendar();
+  }
+
+  function recordKindOf(r) {
+    return r.type === 'in' ? 'in' : (r.subtype === 'farm' ? 'out_farm' : 'out_external');
   }
 
   function renderDash() {
@@ -628,11 +637,43 @@ try {
     var thisWeekAgg = weekAggregate(thisWeek.idx);
 
     var range = displayWeekRange();
-    var weekRows = [];
-    for (var i = range.from; i <= range.to; i++) weekRows.push(weekAggregate(i));
+    var allWeekRows = [];
+    for (var i = range.from; i <= range.to; i++) allWeekRows.push(weekAggregate(i));
 
-    var recordRowsHtml = records.slice().sort(function (a, b) { return b.date < a.date ? -1 : (b.date > a.date ? 1 : 0); })
-      .map(function (r) {
+    var weekMonthSeen = {};
+    var weekMonthOptions = [];
+    allWeekRows.forEach(function (w) {
+      var key = w.wk.year + '-' + String(w.wk.month).padStart(2, '0');
+      if (!weekMonthSeen[key]) {
+        weekMonthSeen[key] = true;
+        weekMonthOptions.push({ key: key, label: w.wk.year + '년 ' + w.wk.month + '월' });
+      }
+    });
+    var weekRows = weekFilterMonth
+      ? allWeekRows.filter(function (w) { return (w.wk.year + '-' + String(w.wk.month).padStart(2, '0')) === weekFilterMonth; })
+      : allWeekRows;
+
+    var sortedRecords = records.slice().sort(function (a, b) { return b.date < a.date ? -1 : (b.date > a.date ? 1 : 0); });
+
+    var recordMonthSeen = {}, recordMonthOptions = [];
+    var recordFarmSeen = {}, recordFarmOptions = [];
+    records.forEach(function (r) {
+      var mk = (r.date || '').slice(0, 7);
+      if (mk && !recordMonthSeen[mk]) { recordMonthSeen[mk] = true; recordMonthOptions.push(mk); }
+      var fn = r.farmName || '';
+      if (fn && !recordFarmSeen[fn]) { recordFarmSeen[fn] = true; recordFarmOptions.push(fn); }
+    });
+    recordMonthOptions.sort();
+    recordFarmOptions.sort();
+
+    var filteredRecords = sortedRecords.filter(function (r) {
+      if (recordFilterMonth && (r.date || '').slice(0, 7) !== recordFilterMonth) return false;
+      if (recordFilterKind && recordKindOf(r) !== recordFilterKind) return false;
+      if (recordFilterFarm && (r.farmName || '') !== recordFilterFarm) return false;
+      return true;
+    });
+
+    var recordRowsHtml = filteredRecords.map(function (r) {
         var badge = r.type === 'in' ? '<span class="badge in">전입</span>'
           : (r.subtype === 'farm' ? '<span class="badge farm">전출</span>' : '<span class="badge ext">외부판매</span>');
         var stockAt = stockAsOf(parseISO(r.date));
@@ -664,6 +705,17 @@ try {
     var queryDate = document.getElementById('stockQueryDate');
     var queryVal = queryDate ? queryDate.value : toISO(today);
 
+    var weekMonthOptionsHtml = '<option value="">전체 보기</option>' + weekMonthOptions.map(function (o) {
+      return '<option value="' + o.key + '"' + (o.key === weekFilterMonth ? ' selected' : '') + '>' + o.label + '</option>';
+    }).join('');
+    var recordMonthOptionsHtml = '<option value="">전체 월</option>' + recordMonthOptions.map(function (mk) {
+      var parts = mk.split('-');
+      return '<option value="' + mk + '"' + (mk === recordFilterMonth ? ' selected' : '') + '>' + parts[0] + '년 ' + Number(parts[1]) + '월</option>';
+    }).join('');
+    var recordFarmOptionsHtml = '<option value="">전체 농장</option>' + recordFarmOptions.map(function (fn) {
+      return '<option value="' + fn + '"' + (fn === recordFilterFarm ? ' selected' : '') + '>' + fn + '</option>';
+    }).join('');
+
     return '' +
       '<div class="cards">' +
         '<div class="card"><span class="label">현재 재고두수 (오늘 기준)</span><span class="value mono">' + fmtNum(curStock) + '두</span><span class="sub">' + fmtShort(today) + '</span></div>' +
@@ -671,15 +723,7 @@ try {
         '<div class="card"><span class="label">이번주 전출</span><span class="value mono">' + fmtNum(thisWeekAgg.farmSum + thisWeekAgg.extSum) + '두</span><span class="sub">농장 ' + fmtNum(thisWeekAgg.farmSum) + ' · 외판 ' + fmtNum(thisWeekAgg.extSum) + '</span></div>' +
       '</div>' +
 
-      '<section class="panel input-only">' +
-        '<h2>예상 폐사두수 설정</h2>' +
-        '<p class="hint">주차별 폐사두수 기본값입니다. 각 주차 표에서 실제 값으로 개별 수정할 수 있습니다.</p>' +
-        '<div class="field-row">' +
-          '<div class="field num"><label>주간 예상폐사 기본값</label><input type="number" min="0" id="defaultDeathInput" value="' + settings.defaultWeeklyDeath + '" data-action="setDefaultDeath"></div>' +
-        '</div>' +
-      '</section>' +
-
-      '<section class="panel input-only">' +
+      '<section class="panel">' +
         '<h2>전입 · 전출 입력</h2>' +
         '<p class="hint">건별로 날짜, 구분, 두수를 입력하세요. 전입은 항상 "' + IN_FARM_NAME + '"에서 들어오므로 농장명이 고정됩니다. 저장 즉시 접속 중인 모든 사람 화면에 반영됩니다.</p>' +
         '<form class="field-row" id="recordForm">' +
@@ -701,7 +745,7 @@ try {
         '</div>' +
       '</section>' +
 
-      '<section class="panel input-only">' +
+      '<section class="panel">' +
         '<h2>재고 조회</h2>' +
         '<p class="hint">날짜를 선택하면 그 시점까지의 전입·전출·예상폐사를 반영한 재고두수를 계산합니다.</p>' +
         '<div class="field-row">' +
@@ -713,16 +757,34 @@ try {
       '<section class="panel">' +
         '<h2>주차별 예상 물량</h2>' +
         '<p class="hint">시작재고·종료재고는 자동 계산됩니다. 폐사두수는 지난 주차는 실제 값을, 앞으로 올 주차는 예상 값을 입력합니다.</p>' +
+        '<div class="field-row" style="margin-bottom:12px">' +
+          '<div class="field"><label>월별 보기</label><select data-action="setWeekMonthFilter">' + weekMonthOptionsHtml + '</select></div>' +
+        '</div>' +
         '<div class="table-wrap"><table><thead><tr>' +
           '<th class="left">주차</th><th class="left">기간</th><th>시작재고</th><th>전입</th><th>폐사두수</th><th>전출</th><th>외부판매</th><th>종료재고</th>' +
         '</tr></thead><tbody>' + (weekRowsHtml || '<tr><td colspan="8" class="empty">표시할 주차가 없습니다.</td></tr>') + '</tbody></table></div>' +
       '</section>' +
 
-      '<section class="panel input-only">' +
-        '<h2>입력 내역</h2>' +
-        '<div class="table-wrap"><table><thead><tr>' +
-          '<th class="left">날짜</th><th class="left">주차</th><th class="left">구분</th><th class="left">농장명</th><th>두수</th><th>당시 재고</th><th class="left"></th>' +
-        '</tr></thead><tbody>' + (recordRowsHtml || '<tr><td colspan="7" class="empty">아직 입력된 내역이 없습니다.</td></tr>') + '</tbody></table></div>' +
+      '<section class="panel">' +
+        '<div class="panel-head">' +
+          '<h2>입력 내역 <span class="count">(총 ' + records.length + '건)</span></h2>' +
+          '<button type="button" class="btn ghost small" data-action="toggleRecords">' + (recordsExpanded ? '숨기기 ▲' : '펼쳐보기 ▾') + '</button>' +
+        '</div>' +
+        (recordsExpanded ? (
+          '<div class="field-row" style="margin:12px 0">' +
+            '<div class="field"><label>월</label><select data-action="setRecordMonthFilter">' + recordMonthOptionsHtml + '</select></div>' +
+            '<div class="field"><label>구분</label><select data-action="setRecordKindFilter">' +
+              '<option value="">전체</option>' +
+              '<option value="in"' + (recordFilterKind === 'in' ? ' selected' : '') + '>전입</option>' +
+              '<option value="out_farm"' + (recordFilterKind === 'out_farm' ? ' selected' : '') + '>전출</option>' +
+              '<option value="out_external"' + (recordFilterKind === 'out_external' ? ' selected' : '') + '>외부판매</option>' +
+            '</select></div>' +
+            '<div class="field"><label>농장명</label><select data-action="setRecordFarmFilter">' + recordFarmOptionsHtml + '</select></div>' +
+          '</div>' +
+          '<div class="table-wrap"><table><thead><tr>' +
+            '<th class="left">날짜</th><th class="left">주차</th><th class="left">구분</th><th class="left">농장명</th><th>두수</th><th>당시 재고</th><th class="left"></th>' +
+          '</tr></thead><tbody>' + (recordRowsHtml || '<tr><td colspan="7" class="empty">조건에 맞는 내역이 없습니다.</td></tr>') + '</tbody></table></div>'
+        ) : '') +
       '</section>';
   }
 
@@ -775,7 +837,8 @@ try {
           return '<span class="cal-chip ' + cls2 + '">' + label + ' -' + fmtNum(r.head) + fname + '</span>';
         }).join('');
         if (dayRecs.length > MAX_CHIPS) chips += '<span class="cal-chip more">+' + (dayRecs.length - MAX_CHIPS) + '건 더</span>';
-        rows += '<div class="' + cls + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + '</div>';
+        var stockLine = dayRecs.length ? '<span class="cal-stock">재고 ' + fmtNum(stockAsOf(dms)) + '두</span>' : '';
+        rows += '<div class="' + cls + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + stockLine + '</div>';
       }
     }
     var dowHtml = WEEKDAY_KR.map(function (w) { return '<div class="cal-dow">' + w + '</div>'; }).join('');
@@ -786,8 +849,8 @@ try {
           '<button class="btn ghost small" data-action="calPrev">◀</button>' +
           '<span class="month-label">' + y + '년 ' + (m + 1) + '월</span>' +
           '<button class="btn ghost small" data-action="calNext">▶</button>' +
-          (shareMode ? '' : '<button class="btn ghost small" data-action="calToday">오늘</button>') +
-          '<button class="btn ' + (shareMode ? '' : 'ghost') + ' small" id="shareToggle" data-action="toggleShare">' + (shareMode ? '✕ 닫기' : '공유용 화면') + '</button>' +
+          '<button class="btn ghost small" data-action="calToday">오늘</button>' +
+          '<button class="btn ghost small" data-action="copyCalendar">' + (calendarCopyState === 'copied' ? '✓ 복사됨' : '📋 클립보드에 복사') + '</button>' +
         '</div>' +
         '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
         '<div class="legend">' +
@@ -796,6 +859,27 @@ try {
           '<span class="sw"><span class="dot2" style="background:var(--out-ext)"></span>외부판매</span>' +
         '</div>' +
       '</section>';
+  }
+
+  function buildCalendarCopyText() {
+    var y = calMonthCursor.y, m = calMonthCursor.m;
+    var firstOfMonth = Date.UTC(y, m, 1);
+    var lastOfMonth = Date.UTC(y, m + 1, 0);
+    var lines = ['루카 후기자돈사 전입출 현황 — ' + y + '년 ' + (m + 1) + '월', ''];
+    var any = false;
+    for (var dms = firstOfMonth; dms <= lastOfMonth; dms += DAY_MS) {
+      var dayRecs = records.filter(function (r) { return parseISO(r.date) === dms; });
+      if (!dayRecs.length) continue;
+      any = true;
+      var parts = dayRecs.map(function (r) {
+        if (r.type === 'in') return '전입 +' + fmtNum(r.head) + '두';
+        var label = r.subtype === 'farm' ? '전출' : '외부판매';
+        return label + ' -' + fmtNum(r.head) + '두' + (r.farmName ? ' · ' + r.farmName : '');
+      });
+      lines.push(fmtSlash(dms) + '  ' + parts.join(', ') + '  (재고 ' + fmtNum(stockAsOf(dms)) + '두)');
+    }
+    if (!any) lines.push('이번 달 입력된 전입·전출 내역이 없습니다.');
+    return lines.join('\n');
   }
 
   // ---------- excel/csv import (pure browser APIs, no external libraries) ----------
@@ -1057,7 +1141,20 @@ try {
     else if (action === 'calPrev') { calMonthCursor.m--; if (calMonthCursor.m < 0) { calMonthCursor.m = 11; calMonthCursor.y--; } render(); }
     else if (action === 'calNext') { calMonthCursor.m++; if (calMonthCursor.m > 11) { calMonthCursor.m = 0; calMonthCursor.y++; } render(); }
     else if (action === 'calToday') { var t = new Date(); calMonthCursor = { y: t.getFullYear(), m: t.getMonth() }; render(); }
-    else if (action === 'toggleShare') { shareMode = !shareMode; render(); }
+    else if (action === 'copyCalendar') {
+      var text = buildCalendarCopyText();
+      var onCopied = function () {
+        calendarCopyState = 'copied';
+        render();
+        setTimeout(function () { calendarCopyState = null; render(); }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onCopied).catch(function () { alert('클립보드 복사에 실패했습니다.'); });
+      } else {
+        alert('이 브라우저에서는 클립보드 복사가 지원되지 않습니다.');
+      }
+    }
+    else if (action === 'toggleRecords') { recordsExpanded = !recordsExpanded; render(); }
     else if (action === 'askDelete') { confirmingDeleteId = b.dataset.id; render(); }
     else if (action === 'cancelDelete') { confirmingDeleteId = null; render(); }
     else if (action === 'confirmDelete') { var id = b.dataset.id; confirmingDeleteId = null; deleteRecord(id); }
@@ -1087,12 +1184,15 @@ try {
     }
     var action = t.dataset.action;
     if (!action) return;
-    if (action === 'setDefaultDeath') saveSettings({ defaultWeeklyDeath: Number(t.value) || 0 });
-    else if (action === 'setDeath') {
+    if (action === 'setDeath') {
       var wd = Object.assign({}, settings.weeklyDeaths);
       wd[t.dataset.week] = Number(t.value) || 0;
       saveSettings({ weeklyDeaths: wd });
     } else if (action === 'queryStock') { render(); }
+    else if (action === 'setWeekMonthFilter') { weekFilterMonth = t.value; render(); }
+    else if (action === 'setRecordMonthFilter') { recordFilterMonth = t.value; render(); }
+    else if (action === 'setRecordKindFilter') { recordFilterKind = t.value; render(); }
+    else if (action === 'setRecordFarmFilter') { recordFilterFarm = t.value; render(); }
   });
 
   app.addEventListener('submit', function (e) {
