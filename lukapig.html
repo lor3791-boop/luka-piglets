@@ -1,89 +1,92 @@
 <title>후기자돈사 운영현황(루카)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #FFFFFF;
     --surface: #FFFFFF;
-    --surface-2: #F3F3F3;
-    --field: #F0F0F0;
-    --border: #E0E0E0;
-    --border-soft: #F0F0F0;
-    --text: #141414;
-    --text-muted: #707070;
-    --text-faint: #ADADAD;
-    --accent: #141414;
+    --surface-2: #F5F6F7;
+    --field: #FFFFFF;
+    --border: #E3E5E8;
+    --border-soft: #EEF0F2;
+    --text: #0E1116;
+    --text-muted: #6B7280;
+    --text-faint: #9CA3AF;
+    --accent: #0E1116;
     --accent-strong: #000000;
-    --accent-soft: #F3F3F3;
-    --blue: #0066FF;
-    --in: #0B5FCC;
-    --in-soft: #E6EFFC;
-    --out-farm: #A15B12;
-    --out-farm-soft: #F3E7D4;
-    --out-ext: #6A4E8C;
-    --out-ext-soft: #ECE5F3;
-    --danger: #B23A3A;
-    --danger-soft: #F7E3E1;
-    --success: #2E7D4F;
-    --success-soft: #E4F1E8;
-    --shadow: rgba(20, 20, 20, 0.06);
-    --radius: 20px;
-    --radius-sm: 14px;
+    --accent-soft: #F5F6F7;
+    --brand-green: #00B67A;
+    --brand-green-soft: #E3F9F0;
+    --in: #2A6FDB;
+    --in-soft: #E8F0FD;
+    --out-farm: #B0651A;
+    --out-farm-soft: #F5E9D8;
+    --out-ext: #7C5AC4;
+    --out-ext-soft: #EFE8FA;
+    --danger: #D64545;
+    --danger-soft: #FBE9E9;
+    --success: #00B67A;
+    --success-soft: #E3F9F0;
+    --shadow: rgba(14, 17, 22, 0.06);
+    --radius: 12px;
+    --radius-sm: 8px;
     --radius-full: 999px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #131313;
-      --surface: #1A1A1A;
-      --surface-2: #212121;
-      --field: #232323;
-      --border: #2C2C2C;
-      --border-soft: #202020;
-      --text: #F2F2F2;
-      --text-muted: #A3A3A3;
-      --text-faint: #6E6E6E;
-      --accent: #F2F2F2;
+      --bg: #0B0D10;
+      --surface: #14171B;
+      --surface-2: #1B1F24;
+      --field: #14171B;
+      --border: #262B31;
+      --border-soft: #1D2126;
+      --text: #F1F2F4;
+      --text-muted: #9CA3AF;
+      --text-faint: #6B7280;
+      --accent: #F1F2F4;
       --accent-strong: #FFFFFF;
-      --accent-soft: #232323;
-      --blue: #4D94FF;
-      --in: #6FA6F2;
-      --in-soft: #1B2A40;
-      --out-farm: #D79A55;
-      --out-farm-soft: #332417;
-      --out-ext: #B39BD6;
-      --out-ext-soft: #2A2333;
-      --danger: #E58A8A;
-      --danger-soft: #332020;
-      --success: #7FC79A;
-      --success-soft: #1C2E22;
+      --accent-soft: #1B1F24;
+      --brand-green: #2ED9A0;
+      --brand-green-soft: #12271F;
+      --in: #6FA0F0;
+      --in-soft: #182640;
+      --out-farm: #E0A25C;
+      --out-farm-soft: #302011;
+      --out-ext: #B79AE8;
+      --out-ext-soft: #251C36;
+      --danger: #EA8A8A;
+      --danger-soft: #2E1B1B;
+      --success: #2ED9A0;
+      --success-soft: #12271F;
       --shadow: rgba(0, 0, 0, 0.4);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #131313;
-    --surface: #1A1A1A;
-    --surface-2: #212121;
-    --field: #232323;
-    --border: #2C2C2C;
-    --border-soft: #202020;
-    --text: #F2F2F2;
-    --text-muted: #A3A3A3;
-    --text-faint: #6E6E6E;
-    --accent: #F2F2F2;
+    --bg: #0B0D10;
+    --surface: #14171B;
+    --surface-2: #1B1F24;
+    --field: #14171B;
+    --border: #262B31;
+    --border-soft: #1D2126;
+    --text: #F1F2F4;
+    --text-muted: #9CA3AF;
+    --text-faint: #6B7280;
+    --accent: #F1F2F4;
     --accent-strong: #FFFFFF;
-    --accent-soft: #232323;
-    --blue: #4D94FF;
-    --in: #6FA6F2;
-    --in-soft: #1B2A40;
-    --out-farm: #D79A55;
-    --out-farm-soft: #332417;
-    --out-ext: #B39BD6;
-    --out-ext-soft: #2A2333;
-    --danger: #E58A8A;
-    --danger-soft: #332020;
-    --success: #7FC79A;
-    --success-soft: #1C2E22;
+    --accent-soft: #1B1F24;
+    --brand-green: #2ED9A0;
+    --brand-green-soft: #12271F;
+    --in: #6FA0F0;
+    --in-soft: #182640;
+    --out-farm: #E0A25C;
+    --out-farm-soft: #302011;
+    --out-ext: #B79AE8;
+    --out-ext-soft: #251C36;
+    --danger: #EA8A8A;
+    --danger-soft: #2E1B1B;
+    --success: #2ED9A0;
+    --success-soft: #12271F;
     --shadow: rgba(0, 0, 0, 0.4);
   }
 
@@ -92,12 +95,12 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'IBM Plex Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    font-family: 'IBM Plex Sans KR', 'Inter', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
     font-size: 14px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-  .mono { font-family: 'IBM Plex Mono', 'Consolas', monospace; font-variant-numeric: tabular-nums; }
+  .mono { font-family: 'Geist Mono', 'IBM Plex Mono', 'Consolas', monospace; font-variant-numeric: tabular-nums; }
   h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 700; letter-spacing: 0; }
   button { font-family: inherit; }
   input, select, button { font-size: 14px; }
@@ -154,11 +157,11 @@
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
   .field input, .field select {
-    border: none; background: var(--field); color: var(--text);
+    border: 1px solid var(--border); background: var(--field); color: var(--text);
     border-radius: var(--radius-sm); padding: 8px 11px; min-width: 0;
   }
   .field input:focus, .field select:focus, button:focus-visible {
-    outline: 2px solid var(--text); outline-offset: 1px;
+    outline: 2px solid var(--brand-green); outline-offset: 1px;
   }
   .field.grow { flex: 1 1 160px; }
   .field.num input { width: 100px; }
@@ -189,9 +192,9 @@
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: var(--surface-2); }
   tbody tr.total-row { font-weight: 700; background: var(--surface-2); }
-  .inline-input { width: 64px; border: none; background: var(--field); color: var(--text); border-radius: var(--radius-sm); padding: 5px 7px; text-align: right; }
-  .cell-input { width: 100%; min-width: 72px; border: none; background: transparent; color: var(--text); padding: 3px 4px; text-align: right; border-radius: 6px; }
-  .cell-input:focus { background: var(--field); outline: none; }
+  .inline-input { width: 64px; border: 1px solid var(--border); background: var(--field); color: var(--text); border-radius: var(--radius-sm); padding: 5px 7px; text-align: right; }
+  .cell-input { width: 100%; min-width: 72px; border: 1px solid transparent; background: transparent; color: var(--text); padding: 3px 4px; text-align: right; border-radius: 6px; }
+  .cell-input:focus { background: var(--field); border-color: var(--border); outline: 2px solid var(--brand-green); }
   .cell-input.left { text-align: left; }
   .week-hi { background: var(--accent-soft) !important; }
 
@@ -208,8 +211,8 @@
     min-height: 88px; padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; position: relative;
   }
   .cal-day.outside { background: var(--bg); color: var(--text-faint); }
-  .cal-day.today { box-shadow: inset 0 0 0 2px var(--blue); }
-  .cal-daynum { font-size: 12px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--brand-green); }
+  .cal-daynum { font-size: 12px; font-weight: 600; font-family: 'Geist Mono', 'IBM Plex Mono', monospace; }
   .cal-chip { font-size: 10.5px; font-weight: 600; border-radius: 6px; padding: 1px 4px; line-height: 1.4; display: block; }
   .cal-chip .fname { font-weight: 500; opacity: .85; }
   .cal-chip.in { background: var(--in-soft); color: var(--in); }
@@ -229,6 +232,26 @@
   .panel-head h2 { margin-bottom: 0; }
   .panel-head .count { font-weight: 500; color: var(--text-faint); font-size: 12.5px; }
 
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+    border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    cursor: pointer; font-size: 15px; padding: 0;
+  }
+  .icon-btn:hover { background: var(--surface-2); }
+
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 760px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 200; background: rgba(14, 17, 22, 0.5);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-panel {
+    background: var(--surface); border-radius: var(--radius); width: 100%; max-width: 1040px;
+    max-height: 88vh; overflow-y: auto; padding: 22px 24px;
+  }
+  .modal-panel h3 { font-size: 16px; font-weight: 700; }
+
   footer.note { font-size: 12px; color: var(--text-faint); text-align: center; padding: 20px 0 4px; }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -239,11 +262,11 @@
     <button type="button" class="brand" data-action="goHome"><h1>후기자돈사 운영현황(루카)</h1></button>
     <div class="tabs" id="tabSwitch" data-action-group="tabs">
       <button class="tab-btn" data-action="setTab" data-tab="lukaStatus">후기자돈현황</button>
-      <button class="tab-btn" data-action="setTab" data-tab="reship">재분양돈군 현황</button>
       <button class="tab-btn" data-action="setTab" data-tab="dash">전입출 현황판</button>
       <button class="tab-btn" data-action="setTab" data-tab="calendar">전입전출 계획표</button>
       <button class="tab-btn" data-action="setTab" data-tab="feedCost">사육비산출</button>
     </div>
+    <button type="button" class="icon-btn" data-action="exportWorkbook" title="엑셀로 다운로드" aria-label="엑셀로 다운로드">⬇️</button>
     <span class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncText">연결 중…</span></span>
   </div>
 
@@ -337,6 +360,11 @@
   var pendingWorkbookImport = null;
   var workbookImportBusy = false;
   var workbookImportError = null;
+  var openEditModal = null;
+  var modalMouseDownOnBackdrop = false;
+  var lukaStatusFilterMonth = toISO(todayMs()).slice(0, 7);
+  var reshipFilterMonth = toISO(todayMs()).slice(0, 7);
+  var reshipFilterFarm = '';
 
   function defaultSettings() {
     return {
@@ -539,7 +567,6 @@
     });
     var view = document.getElementById('view');
     if (activeTab === 'lukaStatus') view.innerHTML = renderLukaStatus();
-    else if (activeTab === 'reship') view.innerHTML = renderReship();
     else if (activeTab === 'feedCost') view.innerHTML = renderFeedCost();
     else if (activeTab === 'calendar') view.innerHTML = renderCalendar();
     else view.innerHTML = renderDash();
@@ -553,26 +580,26 @@
   var STATUS_TABLE_DEFS = {
     lukaStatus: {
       settingsKey: 'lukaStatusRows',
-      title: '1. 후기자돈사 현황',
-      hint: '농장전체전입현황 엑셀을 업로드하면 자동으로 채워지며, 필요하면 직접 수정·추가할 수 있습니다.',
+      title: '1. 후기자돈 전입현황',
+      dateKey: 'date',
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
         { key: 'initIn', label: '최초 전입(두)', type: 'number' },
-        { key: 'avgWeight', label: '전입평체(kg)', type: 'number' },
+        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1 },
         { key: 'claim', label: '크레임(두)', type: 'number' },
         { key: 'directSale', label: '외판(두)', type: 'number' },
         { key: 'netIn', label: '실 전입(두)', type: 'number' },
         { key: 'death', label: '폐사(두)', type: 'number' },
         { key: 'shipped', label: '분양(두)', type: 'number' },
         { key: 'stock', label: '현재고(두)', type: 'number' },
-        { key: 'survivalRate', label: '육성율(%)', type: 'percent' },
+        { key: 'survivalRate', label: '육성율', type: 'percent' },
         { key: 'note', label: '비고', type: 'text' }
       ]
     },
     reship: {
       settingsKey: 'reshipRows',
-      title: '2. 분양돈군 현황 — 1) 분양현황',
-      hint: '농장전체전입현황 엑셀을 업로드하면 자동으로 채워지며, 필요하면 직접 수정·추가할 수 있습니다.',
+      title: '2. 재분양돈군 현황',
+      dateKey: 'date',
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
         { key: 'week', label: '전입주차', type: 'number' },
@@ -583,14 +610,14 @@
         { key: 'death', label: '폐사(두)', type: 'number' },
         { key: 'shipped', label: '출하(두)', type: 'number' },
         { key: 'stock', label: '현재고(두)', type: 'number' },
-        { key: 'survivalRate', label: '실육성율(%)', type: 'percent' },
+        { key: 'survivalRate', label: '실육성율', type: 'percent' },
         { key: 'note', label: '비고', type: 'text' }
       ]
     },
     feedCost: {
       settingsKey: 'feedCostRows',
       title: '월대사육비',
-      hint: '월대사육비 엑셀을 업로드하면 자동으로 채워지며, 필요하면 직접 수정·추가할 수 있습니다.',
+      dateKey: 'inDate',
       columns: [
         { key: 'batchNo', label: '배치번호', type: 'text' },
         { key: 'inDate', label: '전입일자', type: 'date' },
@@ -623,8 +650,69 @@
     if (col.type === 'percent') return (v === undefined || v === null || v === '') ? '' : Math.round(Number(v) * 1000) / 10;
     return (v === undefined || v === null) ? '' : v;
   }
+  function formatNumberCell(v, decimals) {
+    var d = decimals || 0;
+    var n = Number(v) || 0;
+    var rounded = d > 0 ? Math.round(n * Math.pow(10, d)) / Math.pow(10, d) : Math.round(n);
+    return rounded.toLocaleString('ko-KR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  function monthOptionsFromRows(rows, dateKey) {
+    var seen = {}, list = [];
+    rows.forEach(function (r) {
+      var mk = (r[dateKey] || '').slice(0, 7);
+      if (mk && !seen[mk]) { seen[mk] = true; list.push(mk); }
+    });
+    var curMonth = toISO(todayMs()).slice(0, 7);
+    if (!seen[curMonth]) list.push(curMonth);
+    list.sort();
+    return list;
+  }
+  function monthOptionsHtml(months, selected) {
+    return '<option value="">전체</option>' + months.map(function (mk) {
+      var parts = mk.split('-');
+      return '<option value="' + mk + '"' + (mk === selected ? ' selected' : '') + '>' + parts[0] + '년 ' + Number(parts[1]) + '월</option>';
+    }).join('');
+  }
 
-  function renderStatusTable(tabKey) {
+  // ---------- 읽기 전용 표 (본 화면) ----------
+  function renderStatusTable(tabKey, rows) {
+    var def = STATUS_TABLE_DEFS[tabKey];
+    var headHtml = def.columns.map(function (c) {
+      return '<th' + (c.type === 'text' || c.type === 'date' ? ' class="left"' : '') + '>' + c.label + '</th>';
+    }).join('');
+    var bodyRowsHtml = rows.map(function (row) {
+      var cells = def.columns.map(function (c) {
+        var v = row[c.key];
+        var display;
+        if (c.type === 'number') display = formatNumberCell(v, c.decimals);
+        else if (c.type === 'percent') display = formatNumberCell((Number(v) || 0) * 100, 1) + '%';
+        else display = (v === undefined || v === null) ? '' : v;
+        var isLeft = (c.type === 'text' || c.type === 'date');
+        return '<td' + (isLeft ? ' class="left"' : ' class="mono"') + '>' + display + '</td>';
+      }).join('');
+      return '<tr>' + cells + '</tr>';
+    }).join('');
+    var totalsHtml = '';
+    if (rows.length) {
+      var totalCells = def.columns.map(function (c, i) {
+        if (i === 0) return '<td class="left">합계</td>';
+        if (c.type === 'number') {
+          var sum = rows.reduce(function (s, r) { return s + (Number(r[c.key]) || 0); }, 0);
+          return '<td class="mono">' + formatNumberCell(sum, c.decimals) + '</td>';
+        }
+        return '<td></td>';
+      }).join('');
+      totalsHtml = '<tr class="total-row">' + totalCells + '</tr>';
+    }
+    return '' +
+      '<div class="table-wrap"><table><thead><tr>' + headHtml + '</tr></thead><tbody>' +
+      (bodyRowsHtml || '<tr><td colspan="' + def.columns.length + '" class="empty">표시할 내역이 없습니다.</td></tr>') +
+      totalsHtml +
+      '</tbody></table></div>';
+  }
+
+  // ---------- 수정 가능한 표 (수정/추가 팝업) ----------
+  function renderEditableStatusTable(tabKey) {
     var def = STATUS_TABLE_DEFS[tabKey];
     var rows = statusRowsOf(tabKey);
     var headHtml = def.columns.map(function (c) {
@@ -641,44 +729,84 @@
       }).join('');
       return '<tr>' + cells + '<td class="left"><button type="button" class="btn ghost small" data-action="deleteStatusRow" data-tab="' + tabKey + '" data-row="' + idx + '">삭제</button></td></tr>';
     }).join('');
-    var totalsHtml = '';
-    if (rows.length) {
-      var totalCells = def.columns.map(function (c, i) {
-        if (i === 0) return '<td class="left">합계</td>';
-        if (c.type === 'number') {
-          var sum = rows.reduce(function (s, r) { return s + (Number(r[c.key]) || 0); }, 0);
-          return '<td class="mono">' + fmtNum(sum) + '</td>';
-        }
-        return '<td></td>';
-      }).join('');
-      totalsHtml = '<tr class="total-row">' + totalCells + '<td></td></tr>';
-    }
     return '' +
       '<div class="table-wrap"><table><thead><tr>' + headHtml + '</tr></thead><tbody>' +
       (bodyRowsHtml || '<tr><td colspan="' + (def.columns.length + 1) + '" class="empty">등록된 내역이 없습니다. 엑셀을 업로드하거나 행을 추가하세요.</td></tr>') +
-      totalsHtml +
       '</tbody></table></div>' +
       '<div style="margin-top:10px"><button type="button" class="btn ghost small" data-action="addStatusRow" data-tab="' + tabKey + '">+ 행 추가</button></div>';
   }
 
+  function renderStatusEditModal() {
+    if (!openEditModal) return '';
+    var def = STATUS_TABLE_DEFS[openEditModal];
+    return '' +
+      '<div class="modal-backdrop">' +
+        '<div class="modal-panel">' +
+          '<div class="panel-head"><h3>' + def.title + ' 수정</h3><button type="button" class="btn ghost small" data-action="closeEditModal">닫기</button></div>' +
+          renderEditableStatusTable(openEditModal) +
+        '</div>' +
+      '</div>';
+  }
+
+  function computeStatusStats(tabKey, rows) {
+    if (tabKey === 'lukaStatus') {
+      var sumNetIn = 0, sumDeath = 0, sumShipped = 0, sumStock = 0;
+      rows.forEach(function (r) { sumNetIn += Number(r.netIn) || 0; sumDeath += Number(r.death) || 0; sumShipped += Number(r.shipped) || 0; sumStock += Number(r.stock) || 0; });
+      var avgSurvival = sumNetIn ? (sumNetIn - sumDeath) / sumNetIn : 0;
+      return [
+        { label: '총 실전입(두)', value: formatNumberCell(sumNetIn) + '두' },
+        { label: '총 폐사(두)', value: formatNumberCell(sumDeath) + '두' },
+        { label: '총 분양(두)', value: formatNumberCell(sumShipped) + '두' },
+        { label: '평균 육성율', value: formatNumberCell(avgSurvival * 100, 1) + '%' }
+      ];
+    }
+    if (tabKey === 'reship') {
+      var sumIn = 0, sumDeath2 = 0, sumShipped2 = 0;
+      rows.forEach(function (r) { sumIn += Number(r.in) || 0; sumDeath2 += Number(r.death) || 0; sumShipped2 += Number(r.shipped) || 0; });
+      var avgSurvival2 = sumIn ? (sumIn - sumDeath2) / sumIn : 0;
+      return [
+        { label: '총 전입(두)', value: formatNumberCell(sumIn) + '두' },
+        { label: '총 폐사(두)', value: formatNumberCell(sumDeath2) + '두' },
+        { label: '총 출하(두)', value: formatNumberCell(sumShipped2) + '두' },
+        { label: '평균 실육성율', value: formatNumberCell(avgSurvival2 * 100, 1) + '%' }
+      ];
+    }
+    if (tabKey === 'feedCost') {
+      var sumAmount = 0, sumHead = 0;
+      rows.forEach(function (r) { sumAmount += Number(r.amount) || 0; sumHead += Number(r.inHead) || 0; });
+      var perHeadAvg = sumHead ? Math.round(sumAmount / sumHead) : 0;
+      return [
+        { label: '총 지급액', value: formatNumberCell(sumAmount) + '원' },
+        { label: '총 전입두수', value: formatNumberCell(sumHead) + '두' },
+        { label: '두당금액(평균)', value: formatNumberCell(perHeadAvg) + '원' }
+      ];
+    }
+    return [];
+  }
+  function renderStatsCards(stats) {
+    return '<div class="stat-row">' + stats.map(function (s) {
+      return '<div class="card"><span class="label">' + s.label + '</span><span class="value mono">' + s.value + '</span></div>';
+    }).join('') + '</div>';
+  }
+
   function renderWorkbookImportBox() {
     var counts = pendingWorkbookImport ? [
-      pendingWorkbookImport.lukaStatusRows ? ('후기자돈현황 ' + pendingWorkbookImport.lukaStatusRows.length + '건') : null,
+      pendingWorkbookImport.lukaStatusRows ? ('후기자돈 전입현황 ' + pendingWorkbookImport.lukaStatusRows.length + '건') : null,
       pendingWorkbookImport.reshipRows ? ('재분양돈군현황 ' + pendingWorkbookImport.reshipRows.length + '건') : null,
       pendingWorkbookImport.feedCostRows ? ('사육비산출 ' + pendingWorkbookImport.feedCostRows.length + '건') : null
     ].filter(Boolean).join(' · ') : '';
     return '' +
       '<div class="import-box">' +
         '<div class="row">' +
-          '<button type="button" class="btn ghost small" data-action="triggerWorkbookImport">농장전체전입현황 엑셀 업로드</button>' +
+          '<button type="button" class="btn ghost small" data-action="triggerWorkbookImport">엑셀 업로드</button>' +
           '<input type="file" id="workbookFileInput" accept=".xlsx" style="display:none">' +
-          '<span class="hint" style="margin:0">‘농장전체전입현황’, ‘월대사육비’ 시트가 있는 원본 엑셀을 그대로 올리면 아래 세 탭에 자동 반영됩니다.</span>' +
+          '<span class="hint" style="margin:0">전체농장 전입현황 엑셀(‘농장전체전입현황’, ‘월대사육비’ 시트 포함)을 그대로 올리면 자동으로 반영됩니다.</span>' +
         '</div>' +
         (workbookImportBusy ? '<p class="hint" style="margin:8px 0 0">읽는 중…</p>' : '') +
         (workbookImportError ? '<p class="hint" style="margin:8px 0 0;color:var(--danger)">' + workbookImportError + '</p>' : '') +
         (pendingWorkbookImport ? (
           '<div style="margin-top:10px">' +
-            '<p class="hint" style="margin:0 0 6px;color:var(--text)">' + counts + '을(를) 읽었습니다. 확인을 누르면 해당 탭의 기존 내용을 전체 교체합니다.</p>' +
+            '<p class="hint" style="margin:0 0 6px;color:var(--text)">' + counts + '을(를) 읽었습니다. 확인을 누르면 해당 데이터를 전체 교체합니다.</p>' +
             '<div class="row" style="margin-top:8px">' +
               '<button type="button" class="btn" data-action="confirmWorkbookImport">이 내용으로 반영</button>' +
               '<button type="button" class="btn ghost small" data-action="cancelWorkbookImport">취소</button>' +
@@ -689,36 +817,73 @@
   }
 
   function renderLukaStatus() {
-    var def = STATUS_TABLE_DEFS.lukaStatus;
-    return '' +
-      '<section class="panel">' +
-        '<h2>' + def.title + '</h2>' +
-        '<p class="hint">' + def.hint + '</p>' +
-        renderWorkbookImportBox() +
-        renderStatusTable('lukaStatus') +
-      '</section>';
-  }
+    var curMonth = toISO(todayMs()).slice(0, 7);
 
-  function renderReship() {
-    var def = STATUS_TABLE_DEFS.reship;
+    var allLuka = statusRowsOf('lukaStatus');
+    var lukaMonths = monthOptionsFromRows(allLuka, 'date');
+    var lukaFiltered = lukaStatusFilterMonth
+      ? allLuka.filter(function (r) { return (r.date || '').slice(0, 7) === lukaStatusFilterMonth; })
+      : allLuka;
+
+    var allReship = statusRowsOf('reship');
+    var reshipMonths = monthOptionsFromRows(allReship, 'date');
+    var reshipFarmSeen = {}, reshipFarms = [];
+    allReship.forEach(function (r) { if (r.farm && !reshipFarmSeen[r.farm]) { reshipFarmSeen[r.farm] = true; reshipFarms.push(r.farm); } });
+    reshipFarms.sort();
+    var reshipFiltered = allReship.filter(function (r) {
+      if (reshipFilterMonth && (r.date || '').slice(0, 7) !== reshipFilterMonth) return false;
+      if (reshipFilterFarm && r.farm !== reshipFilterFarm) return false;
+      return true;
+    });
+    var reshipFarmOptionsHtml = '<option value="">전체 농장</option>' + reshipFarms.map(function (f) {
+      return '<option value="' + f + '"' + (f === reshipFilterFarm ? ' selected' : '') + '>' + f + '</option>';
+    }).join('');
+
     return '' +
       '<section class="panel">' +
-        '<h2>' + def.title + '</h2>' +
-        '<p class="hint">' + def.hint + '</p>' +
+        '<div class="panel-head"><h2>후기자돈현황</h2></div>' +
         renderWorkbookImportBox() +
-        renderStatusTable('reship') +
-      '</section>';
+      '</section>' +
+
+      '<section class="panel">' +
+        '<div class="panel-head">' +
+          '<h2>' + STATUS_TABLE_DEFS.lukaStatus.title + '</h2>' +
+          '<button type="button" class="btn ghost small" data-action="openEditStatusModal" data-tab="lukaStatus">수정/추가</button>' +
+        '</div>' +
+        renderStatsCards(computeStatusStats('lukaStatus', lukaFiltered)) +
+        '<div class="field-row" style="margin-bottom:12px"><div class="field"><label>전입월</label><select data-action="setLukaStatusMonthFilter">' + monthOptionsHtml(lukaMonths, lukaStatusFilterMonth) + '</select></div></div>' +
+        renderStatusTable('lukaStatus', lukaFiltered) +
+      '</section>' +
+
+      '<section class="panel">' +
+        '<div class="panel-head">' +
+          '<h2>' + STATUS_TABLE_DEFS.reship.title + '</h2>' +
+          '<button type="button" class="btn ghost small" data-action="openEditStatusModal" data-tab="reship">수정/추가</button>' +
+        '</div>' +
+        renderStatsCards(computeStatusStats('reship', reshipFiltered)) +
+        '<div class="field-row" style="margin-bottom:12px">' +
+          '<div class="field"><label>전입월</label><select data-action="setReshipMonthFilter">' + monthOptionsHtml(reshipMonths, reshipFilterMonth) + '</select></div>' +
+          '<div class="field"><label>분양농장</label><select data-action="setReshipFarmFilter">' + reshipFarmOptionsHtml + '</select></div>' +
+        '</div>' +
+        renderStatusTable('reship', reshipFiltered) +
+      '</section>' +
+      renderStatusEditModal();
   }
 
   function renderFeedCost() {
     var def = STATUS_TABLE_DEFS.feedCost;
+    var rows = statusRowsOf('feedCost');
     return '' +
       '<section class="panel">' +
-        '<h2>' + def.title + '</h2>' +
-        '<p class="hint">' + def.hint + '</p>' +
+        '<div class="panel-head">' +
+          '<h2>' + def.title + '</h2>' +
+          '<button type="button" class="btn ghost small" data-action="openEditStatusModal" data-tab="feedCost">수정/추가</button>' +
+        '</div>' +
         renderWorkbookImportBox() +
-        renderStatusTable('feedCost') +
-      '</section>';
+        renderStatsCards(computeStatusStats('feedCost', rows)) +
+        renderStatusTable('feedCost', rows) +
+      '</section>' +
+      renderStatusEditModal();
   }
 
   function renderDash() {
@@ -1101,9 +1266,7 @@
     });
   }
 
-  async function saveCalendarImage(blob) {
-    var filename = '루카_전입출현황_' + calMonthCursor.y + String(calMonthCursor.m + 1).padStart(2, '0') + '.png';
-
+  async function saveGeneratedFile(blob, filename) {
     // inside the Claude Artifact viewer, only the downloads capability can hand the
     // viewer a file — a plain <a download> link is inert there.
     var claudeDownloads = null;
@@ -1116,7 +1279,7 @@
     }
 
     var file = null;
-    try { file = new File([blob], filename, { type: 'image/png' }); } catch (e) {}
+    try { file = new File([blob], filename, { type: blob.type }); } catch (e) {}
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file] }).catch(function () {});
       return;
@@ -1129,6 +1292,202 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  async function saveCalendarImage(blob) {
+    var filename = '루카_전입출현황_' + calMonthCursor.y + String(calMonthCursor.m + 1).padStart(2, '0') + '.png';
+    await saveGeneratedFile(blob, filename);
+  }
+
+  // ---------- xlsx export (pure browser APIs, no external libraries) ----------
+  var CRC32_TABLE = null;
+  function crc32(bytes) {
+    if (!CRC32_TABLE) {
+      CRC32_TABLE = new Uint32Array(256);
+      for (var n = 0; n < 256; n++) {
+        var c = n;
+        for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        CRC32_TABLE[n] = c >>> 0;
+      }
+    }
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // minimal stored-mode (uncompressed) ZIP writer — enough to produce a valid .xlsx
+  function buildZip(files) {
+    var encoder = new TextEncoder();
+    var localParts = [], centralParts = [];
+    var offset = 0;
+    files.forEach(function (f) {
+      var nameBytes = encoder.encode(f.name);
+      var data = f.data;
+      var crc = crc32(data);
+
+      var localHeader = new Uint8Array(30 + nameBytes.length);
+      var dv = new DataView(localHeader.buffer);
+      dv.setUint32(0, 0x04034b50, true);
+      dv.setUint16(4, 20, true);
+      dv.setUint16(6, 0, true);
+      dv.setUint16(8, 0, true);
+      dv.setUint16(10, 0, true);
+      dv.setUint16(12, 0, true);
+      dv.setUint32(14, crc, true);
+      dv.setUint32(18, data.length, true);
+      dv.setUint32(22, data.length, true);
+      dv.setUint16(26, nameBytes.length, true);
+      dv.setUint16(28, 0, true);
+      localHeader.set(nameBytes, 30);
+      localParts.push(localHeader, data);
+
+      var centralHeader = new Uint8Array(46 + nameBytes.length);
+      var cdv = new DataView(centralHeader.buffer);
+      cdv.setUint32(0, 0x02014b50, true);
+      cdv.setUint16(4, 20, true);
+      cdv.setUint16(6, 20, true);
+      cdv.setUint16(8, 0, true);
+      cdv.setUint16(10, 0, true);
+      cdv.setUint16(12, 0, true);
+      cdv.setUint16(14, 0, true);
+      cdv.setUint32(16, crc, true);
+      cdv.setUint32(20, data.length, true);
+      cdv.setUint32(24, data.length, true);
+      cdv.setUint16(28, nameBytes.length, true);
+      cdv.setUint16(30, 0, true);
+      cdv.setUint16(32, 0, true);
+      cdv.setUint16(34, 0, true);
+      cdv.setUint16(36, 0, true);
+      cdv.setUint32(38, 0, true);
+      cdv.setUint32(42, offset, true);
+      centralHeader.set(nameBytes, 46);
+      centralParts.push(centralHeader);
+
+      offset += localHeader.length + data.length;
+    });
+
+    var centralStart = offset;
+    var centralSize = centralParts.reduce(function (s, p) { return s + p.length; }, 0);
+
+    var eocd = new Uint8Array(22);
+    var edv = new DataView(eocd.buffer);
+    edv.setUint32(0, 0x06054b50, true);
+    edv.setUint16(4, 0, true);
+    edv.setUint16(6, 0, true);
+    edv.setUint16(8, files.length, true);
+    edv.setUint16(10, files.length, true);
+    edv.setUint32(12, centralSize, true);
+    edv.setUint32(16, centralStart, true);
+    edv.setUint16(20, 0, true);
+
+    var allParts = localParts.concat(centralParts, [eocd]);
+    var totalLen = allParts.reduce(function (s, p) { return s + p.length; }, 0);
+    var out = new Uint8Array(totalLen);
+    var pos = 0;
+    allParts.forEach(function (p) { out.set(p, pos); pos += p.length; });
+    return out;
+  }
+
+  function xmlEscape(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function colIndexToLetter(idx) {
+    var s = '', n = idx + 1;
+    while (n > 0) {
+      var rem = (n - 1) % 26;
+      s = String.fromCharCode(65 + rem) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+  function buildSheetXml(rows) {
+    var rowsXml = rows.map(function (row, rIdx) {
+      var r = rIdx + 1;
+      var cellsXml = row.map(function (val, cIdx) {
+        var ref = colIndexToLetter(cIdx) + r;
+        if (val === null || val === undefined || val === '') return '';
+        if (typeof val === 'number' && isFinite(val)) return '<c r="' + ref + '"><v>' + val + '</v></c>';
+        return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(val) + '</t></is></c>';
+      }).join('');
+      return '<row r="' + r + '">' + cellsXml + '</row>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetData>' + rowsXml + '</sheetData>' +
+      '</worksheet>';
+  }
+  function buildWorkbookXml(sheetNames) {
+    var sheetsXml = sheetNames.map(function (name, i) {
+      return '<sheet name="' + xmlEscape(name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets>' + sheetsXml + '</sheets>' +
+      '</workbook>';
+  }
+  function buildWorkbookRelsXml(sheetNames) {
+    var relsXml = sheetNames.map(function (name, i) {
+      return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + relsXml + '</Relationships>';
+  }
+  function buildContentTypesXml(sheetCount) {
+    var overrides = '';
+    for (var i = 1; i <= sheetCount; i++) {
+      overrides += '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    }
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      overrides +
+      '</Types>';
+  }
+  function buildRootRelsXml() {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>';
+  }
+
+  function statusRowsForExport(tabKey) {
+    var def = STATUS_TABLE_DEFS[tabKey];
+    var out = [def.columns.map(function (c) { return c.label; })];
+    statusRowsOf(tabKey).forEach(function (r) {
+      out.push(def.columns.map(function (c) {
+        var v = r[c.key];
+        if (c.type === 'percent') return (v === undefined || v === null || v === '') ? '' : Math.round(Number(v) * 1000) / 10;
+        return (v === undefined || v === null) ? '' : v;
+      }));
+    });
+    return out;
+  }
+
+  function buildExportWorkbookBlob() {
+    var encoder = new TextEncoder();
+    var sheetNames = ['후기자돈사 전입현황', '재분양돈군 현황', '사육비산출'];
+    var sheetsData = [statusRowsForExport('lukaStatus'), statusRowsForExport('reship'), statusRowsForExport('feedCost')];
+
+    var files = [
+      { name: '[Content_Types].xml', data: encoder.encode(buildContentTypesXml(sheetsData.length)) },
+      { name: '_rels/.rels', data: encoder.encode(buildRootRelsXml()) },
+      { name: 'xl/workbook.xml', data: encoder.encode(buildWorkbookXml(sheetNames)) },
+      { name: 'xl/_rels/workbook.xml.rels', data: encoder.encode(buildWorkbookRelsXml(sheetNames)) }
+    ];
+    sheetsData.forEach(function (rows, i) {
+      files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: encoder.encode(buildSheetXml(rows)) });
+    });
+
+    var zipBytes = buildZip(files);
+    return new Blob([zipBytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+
+  async function exportStatusWorkbook() {
+    var blob = buildExportWorkbookBlob();
+    var filename = '후기자돈사_운영현황_' + toISO(todayMs()) + '.xlsx';
+    await saveGeneratedFile(blob, filename);
   }
 
   // ---------- excel/csv import (pure browser APIs, no external libraries) ----------
@@ -1394,7 +1753,7 @@
 
   function parseFarmwideSheetRows(rows) {
     // 농장전체전입현황: 헤더 4행, 데이터는 5행부터. D=농장명, G=그룹명(차수), H=분양농장(상대 농장),
-    // I=전입일, J=실두수, N=클레임두수, P=폐사(당기간), R=전출,판매(당기간)
+    // I=전입일, J=실두수, K=총체중, N=클레임두수, P=폐사(당기간), R=전출,판매(당기간)
     var out = [];
     for (var r = 5; r < rows.length; r++) {
       var row = rows[r];
@@ -1407,6 +1766,7 @@
         counterpartFarm: row[7] != null ? String(row[7]).trim() : '',
         inDateSerial: row[8],
         headIn: Number(row[9]) || 0,
+        totalWeight: Number(row[10]) || 0,
         claimHead: Number(row[13]) || 0,
         deathPeriod: Number(row[15]) || 0,
         shipPeriod: Number(row[17]) || 0
@@ -1420,16 +1780,16 @@
     parsed.filter(function (r) { return r.farmName === '자돈_루카'; }).forEach(function (r) {
       var base = groupBaseName(r.groupCode);
       if (!base) return;
-      if (!groups[base]) { groups[base] = { inDateSerial: r.inDateSerial, headIn: 0, claimHead: 0, deathPeriod: 0, shipPeriod: 0 }; order.push(base); }
+      if (!groups[base]) { groups[base] = { inDateSerial: r.inDateSerial, headIn: 0, totalWeight: 0, claimHead: 0, deathPeriod: 0, shipPeriod: 0 }; order.push(base); }
       var g = groups[base];
-      g.headIn += r.headIn; g.claimHead += r.claimHead; g.deathPeriod += r.deathPeriod; g.shipPeriod += r.shipPeriod;
+      g.headIn += r.headIn; g.totalWeight += r.totalWeight; g.claimHead += r.claimHead; g.deathPeriod += r.deathPeriod; g.shipPeriod += r.shipPeriod;
     });
     return order.map(function (base) {
       var g = groups[base];
       return {
         date: excelSerialToISO(g.inDateSerial),
         initIn: g.headIn + g.claimHead,
-        avgWeight: 0,
+        avgWeight: g.headIn ? Math.round((g.totalWeight / g.headIn) * 10) / 10 : 0,
         claim: g.claimHead,
         directSale: 0,
         netIn: g.headIn,
@@ -1457,7 +1817,7 @@
       var inMs = excelSerialToMs(g.inDateSerial);
       return {
         date: excelSerialToISO(g.inDateSerial),
-        week: Math.round(((todayStamp - inMs) / (7 * DAY_MS)) * 10) / 10,
+        week: Math.round((todayStamp - inMs) / (7 * DAY_MS)),
         farm: g.farmName,
         in: g.headIn,
         claim: g.claimHead,
@@ -1487,7 +1847,7 @@
         inHead: Number(row[5]) || 0,
         amount: Number(row[30]) || 0,
         settleHead: Number(row[31]) || 0,
-        perHead: Number(row[32]) || 0,
+        perHead: Math.round(Number(row[32]) || 0),
         settleMonth: row[33] != null ? String(row[33]).trim() : '',
         settled: row[34] != null ? String(row[34]).trim() : '',
         note: row[35] != null ? String(row[35]).trim() : ''
@@ -1546,11 +1906,47 @@
   // ---------- event wiring ----------
   var app = document.getElementById('app');
 
+  var pendingActionEl = null;
+  var pendingActionPos = null;
+
+  app.addEventListener('mousedown', function (e) {
+    modalMouseDownOnBackdrop = e.target.classList && e.target.classList.contains('modal-backdrop');
+    pendingActionEl = e.target.closest('[data-action]');
+    pendingActionPos = pendingActionEl ? { x: e.clientX, y: e.clientY } : null;
+  });
+
+  // Editing a table cell inside the modal fires a synchronous 'change' → render() on blur,
+  // which can replace the DOM node under the pointer between mousedown and mouseup and
+  // silently swallow the native 'click' (browsers won't fire click if the mousedown target
+  // got disconnected). This recovers that swallowed click from the still-valid dataset.
+  app.addEventListener('mouseup', function (e) {
+    var b = pendingActionEl;
+    if (!b) return;
+    var dx = Math.abs(e.clientX - pendingActionPos.x), dy = Math.abs(e.clientY - pendingActionPos.y);
+    if (dx > 6 || dy > 6) return;
+    setTimeout(function () {
+      if (pendingActionEl === b) { pendingActionEl = null; runAction(b); }
+    }, 0);
+  });
+
   app.addEventListener('click', function (e) {
+    if (e.target.classList && e.target.classList.contains('modal-backdrop')) {
+      if (modalMouseDownOnBackdrop) { openEditModal = null; render(); }
+      modalMouseDownOnBackdrop = false;
+      return;
+    }
     var b = e.target.closest('[data-action]');
     if (!b) return;
+    pendingActionEl = null;
+    runAction(b);
+  });
+
+  function runAction(b) {
     var action = b.dataset.action;
     if (action === 'setTab') { activeTab = b.dataset.tab; render(); }
+    else if (action === 'openEditStatusModal') { openEditModal = b.dataset.tab; render(); }
+    else if (action === 'closeEditModal') { openEditModal = null; render(); }
+    else if (action === 'exportWorkbook') { exportStatusWorkbook(); }
     else if (action === 'goHome') { activeTab = 'lukaStatus'; render(); }
     else if (action === 'addStatusRow') {
       var tabKey = b.dataset.tab;
@@ -1606,7 +2002,7 @@
       pendingImport = null; render();
       if (toApply) replaceAllRecords(toApply.records);
     }
-  });
+  }
 
   app.addEventListener('change', function (e) {
     var t = e.target;
@@ -1639,6 +2035,9 @@
     else if (action === 'setRecordMonthFilter') { recordFilterMonth = t.value; render(); }
     else if (action === 'setRecordKindFilter') { recordFilterKind = t.value; render(); }
     else if (action === 'setRecordFarmFilter') { recordFilterFarm = t.value; render(); }
+    else if (action === 'setLukaStatusMonthFilter') { lukaStatusFilterMonth = t.value; render(); }
+    else if (action === 'setReshipMonthFilter') { reshipFilterMonth = t.value; render(); }
+    else if (action === 'setReshipFarmFilter') { reshipFilterFarm = t.value; render(); }
     else if (action === 'setStatusCell') {
       var stTab = t.dataset.tab, stRow = Number(t.dataset.row), stField = t.dataset.field, stType = t.dataset.type;
       var stRows = statusRowsOf(stTab).slice();
@@ -1670,6 +2069,10 @@
     document.querySelector('#recordForm [name="date"]').value = toISO(todayMs());
     document.getElementById('farmNameInput').value = IN_FARM_NAME;
     document.getElementById('farmNameInput').disabled = true;
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && openEditModal) { openEditModal = null; render(); }
   });
 
   render();
