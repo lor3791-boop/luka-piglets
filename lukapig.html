@@ -580,14 +580,14 @@
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
         { key: 'initIn', label: '최초 전입(두)', type: 'number', unit: 'head' },
-        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg' },
+        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg', weightBasis: 'netIn' },
         { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
         { key: 'directSale', label: '외판(두)', type: 'number', unit: 'head' },
         { key: 'netIn', label: '실 전입(두)', type: 'number', unit: 'head' },
         { key: 'death', label: '폐사(두)', type: 'number', unit: 'head' },
         { key: 'shipped', label: '분양(두)', type: 'number', unit: 'head' },
         { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
-        { key: 'survivalRate', label: '육성율', type: 'percent' },
+        { key: 'survivalRate', label: '육성율', type: 'percent', survivalBasis: 'netIn' },
         { key: 'note', label: '비고', type: 'text' }
       ]
     },
@@ -600,13 +600,13 @@
         { key: 'week', label: '전입주차', type: 'number', suffix: '주차', unit: 'week' },
         { key: 'farm', label: '분양농장', type: 'text' },
         { key: 'in', label: '전입(두)', type: 'number', unit: 'head' },
-        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg' },
+        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg', weightBasis: 'in' },
         { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
         { key: 'netIn', label: '실전입(두)', type: 'number', unit: 'head' },
         { key: 'death', label: '폐사(두)', type: 'number', unit: 'head' },
         { key: 'shipped', label: '출하(두)', type: 'number', unit: 'head' },
         { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
-        { key: 'survivalRate', label: '육성율', type: 'percent' },
+        { key: 'survivalRate', label: '육성율', type: 'percent', survivalBasis: 'in' },
         { key: 'note', label: '비고', type: 'text' }
       ]
     },
@@ -671,6 +671,18 @@
   }
 
   // ---------- 읽기 전용 표 (본 화면) ----------
+  function weightedAverage(rows, valueKey, basisKey) {
+    var basisSum = rows.reduce(function (s, r) { return s + (Number(r[basisKey]) || 0); }, 0);
+    if (!basisSum) return 0;
+    var weightedSum = rows.reduce(function (s, r) { return s + (Number(r[valueKey]) || 0) * (Number(r[basisKey]) || 0); }, 0);
+    return weightedSum / basisSum;
+  }
+  function survivalRateTotal(rows, basisKey) {
+    var basisSum = rows.reduce(function (s, r) { return s + (Number(r[basisKey]) || 0); }, 0);
+    if (!basisSum) return 0;
+    var deathSum = rows.reduce(function (s, r) { return s + (Number(r.death) || 0); }, 0);
+    return (basisSum - deathSum) / basisSum;
+  }
   function cellTone(colKey, colType, value, row) {
     if (colKey === 'death') return (Number(value) || 0) > 0 ? 'tone-danger' : '';
     if (colKey === 'shipped') return (Number(value) || 0) > 0 ? 'tone-success' : '';
@@ -708,8 +720,12 @@
       var totalCells = def.columns.map(function (c, i) {
         if (i === 0) return '<td class="left">합계</td>';
         if (c.type === 'number') {
-          var sum = rows.reduce(function (s, r) { return s + (Number(r[c.key]) || 0); }, 0);
-          return '<td class="mono">' + formatNumberCell(sum, c.decimals) + '</td>';
+          var val = c.weightBasis ? weightedAverage(rows, c.key, c.weightBasis) : rows.reduce(function (s, r) { return s + (Number(r[c.key]) || 0); }, 0);
+          return '<td class="mono">' + formatNumberCell(val, c.decimals) + '</td>';
+        }
+        if (c.type === 'percent' && c.survivalBasis) {
+          var rate = survivalRateTotal(rows, c.survivalBasis);
+          return '<td class="mono">' + formatNumberCell(rate * 100, 1) + '%</td>';
         }
         return '<td></td>';
       }).join('');
@@ -1509,6 +1525,7 @@
   var XF_TOTAL_WON = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_WON, align: 'right' });
   var XF_TOTAL_KG = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_KG, align: 'right' });
   var XF_TOTAL_WEEK = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_WEEK, align: 'right' });
+  var XF_TOTAL_PCT = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
 
   function buildStylesXml() {
     var fontsXml = XLSX_STYLE.fonts.map(function (f) {
@@ -1886,9 +1903,11 @@
       def.columns.forEach(function (c, i) {
         if (i === 0) { b.set(row, col + i, '합계', XF_TOTAL_LABEL); return; }
         if (c.type === 'number') {
-          var sum = rows.reduce(function (s2, r2) { return s2 + (Number(r2[c.key]) || 0); }, 0);
+          var val = c.weightBasis ? weightedAverage(rows, c.key, c.weightBasis) : rows.reduce(function (s2, r2) { return s2 + (Number(r2[c.key]) || 0); }, 0);
           var xf = c.unit === 'won' ? XF_TOTAL_WON : c.unit === 'kg' ? XF_TOTAL_KG : c.unit === 'week' ? XF_TOTAL_WEEK : XF_TOTAL_HEAD;
-          b.set(row, col + i, sum, xf);
+          b.set(row, col + i, val, xf);
+        } else if (c.type === 'percent' && c.survivalBasis) {
+          b.set(row, col + i, survivalRateTotal(rows, c.survivalBasis), XF_TOTAL_PCT);
         } else {
           b.set(row, col + i, '', XF_TOTAL_LABEL);
         }
