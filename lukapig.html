@@ -346,10 +346,10 @@
   var importBusy = false;
   var importError = null;
   var recordsExpanded = false;
-  var recordFilterMonth = '';
+  var recordFilterMonth = toISO(todayMs()).slice(0, 7);
   var recordFilterKind = '';
   var recordFilterFarm = '';
-  var weekFilterMonth = '';
+  var weekFilterMonth = toISO(todayMs()).slice(0, 7);
   var pendingWorkbookImport = null;
   var workbookImportBusy = false;
   var workbookImportError = null;
@@ -565,6 +565,8 @@
     else view.innerHTML = renderDash();
   }
 
+  var KIND_LABELS = { in: '전입', out_farm: '전출', out_external: '외부판매' };
+  var KIND_ORDER = ['in', 'out_farm', 'out_external'];
   function recordKindOf(r) {
     return r.type === 'in' ? 'in' : (r.subtype === 'farm' ? 'out_farm' : 'out_external');
   }
@@ -595,15 +597,16 @@
       dateKey: 'date',
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
-        { key: 'week', label: '전입주차', type: 'number' },
+        { key: 'week', label: '전입주차', type: 'number', suffix: '주차', unit: 'week' },
         { key: 'farm', label: '분양농장', type: 'text' },
         { key: 'in', label: '전입(두)', type: 'number', unit: 'head' },
+        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg' },
         { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
         { key: 'netIn', label: '실전입(두)', type: 'number', unit: 'head' },
         { key: 'death', label: '폐사(두)', type: 'number', unit: 'head' },
         { key: 'shipped', label: '출하(두)', type: 'number', unit: 'head' },
         { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
-        { key: 'survivalRate', label: '실육성율', type: 'percent' },
+        { key: 'survivalRate', label: '육성율', type: 'percent' },
         { key: 'note', label: '비고', type: 'text' }
       ]
     },
@@ -688,7 +691,7 @@
       var cells = def.columns.map(function (c) {
         var v = row[c.key];
         var display;
-        if (c.type === 'number') display = formatNumberCell(v, c.decimals);
+        if (c.type === 'number') display = formatNumberCell(v, c.decimals) + (c.suffix || '');
         else if (c.type === 'percent') display = formatNumberCell((Number(v) || 0) * 100, 1) + '%';
         else if (c.type === 'checkbox') display = v ? '✓' : '';
         else display = (v === undefined || v === null) ? '' : v;
@@ -779,7 +782,7 @@
         { label: '총 전입(두)', value: formatNumberCell(sumIn) + '두', tone: 'accent' },
         { label: '총 폐사(두)', value: formatNumberCell(sumDeath2) + '두', tone: sumDeath2 > 0 ? 'danger' : '' },
         { label: '총 출하(두)', value: formatNumberCell(sumShipped2) + '두', tone: sumShipped2 > 0 ? 'success' : '' },
-        { label: '평균 실육성율', value: formatNumberCell(avgSurvival2 * 100, 1) + '%', tone: sumIn ? (avgSurvival2 >= 0.9 ? 'success' : 'danger') : '' }
+        { label: '평균 육성율', value: formatNumberCell(avgSurvival2 * 100, 1) + '%', tone: sumIn ? (avgSurvival2 >= 0.9 ? 'success' : 'danger') : '' }
       ];
     }
     if (tabKey === 'feedCost') {
@@ -837,9 +840,15 @@
       : allLuka;
 
     var allReship = statusRowsOf('reship');
-    var reshipMonths = monthOptionsFromRows(allReship, 'date');
+    var reshipRowsForMonthOptions = reshipFilterFarm
+      ? allReship.filter(function (r) { return r.farm === reshipFilterFarm; })
+      : allReship;
+    var reshipMonths = monthOptionsFromRows(reshipRowsForMonthOptions, 'date');
+    var reshipRowsForFarmOptions = reshipFilterMonth
+      ? allReship.filter(function (r) { return (r.date || '').slice(0, 7) === reshipFilterMonth; })
+      : allReship;
     var reshipFarmSeen = {}, reshipFarms = [];
-    allReship.forEach(function (r) { if (r.farm && !reshipFarmSeen[r.farm]) { reshipFarmSeen[r.farm] = true; reshipFarms.push(r.farm); } });
+    reshipRowsForFarmOptions.forEach(function (r) { if (r.farm && !reshipFarmSeen[r.farm]) { reshipFarmSeen[r.farm] = true; reshipFarms.push(r.farm); } });
     reshipFarms.sort();
     var reshipFiltered = allReship.filter(function (r) {
       if (reshipFilterMonth && (r.date || '').slice(0, 7) !== reshipFilterMonth) return false;
@@ -922,23 +931,40 @@
 
     var sortedRecords = records.slice().sort(function (a, b) { return b.date < a.date ? -1 : (b.date > a.date ? 1 : 0); });
 
+    function recordMatchesFilters(r, skip) {
+      if (skip !== 'month' && recordFilterMonth && (r.date || '').slice(0, 7) !== recordFilterMonth) return false;
+      if (skip !== 'kind' && recordFilterKind && recordKindOf(r) !== recordFilterKind) return false;
+      if (skip !== 'farm' && recordFilterFarm && (r.farmName || '') !== recordFilterFarm) return false;
+      return true;
+    }
+
     var recordMonthSeen = {}, recordMonthOptions = [];
-    var recordFarmSeen = {}, recordFarmOptions = [];
     records.forEach(function (r) {
+      if (!recordMatchesFilters(r, 'month')) return;
       var mk = (r.date || '').slice(0, 7);
       if (mk && !recordMonthSeen[mk]) { recordMonthSeen[mk] = true; recordMonthOptions.push(mk); }
+    });
+    var curMonthForRecords = toISO(todayMs()).slice(0, 7);
+    if (!recordMonthSeen[curMonthForRecords]) recordMonthOptions.push(curMonthForRecords);
+    recordMonthOptions.sort();
+
+    var recordKindSeen = {}, recordKindOptions = [];
+    records.forEach(function (r) {
+      if (!recordMatchesFilters(r, 'kind')) return;
+      var k = recordKindOf(r);
+      if (!recordKindSeen[k]) { recordKindSeen[k] = true; recordKindOptions.push(k); }
+    });
+    recordKindOptions.sort(function (a, b) { return KIND_ORDER.indexOf(a) - KIND_ORDER.indexOf(b); });
+
+    var recordFarmSeen = {}, recordFarmOptions = [];
+    records.forEach(function (r) {
+      if (!recordMatchesFilters(r, 'farm')) return;
       var fn = r.farmName || '';
       if (fn && !recordFarmSeen[fn]) { recordFarmSeen[fn] = true; recordFarmOptions.push(fn); }
     });
-    recordMonthOptions.sort();
     recordFarmOptions.sort();
 
-    var filteredRecords = sortedRecords.filter(function (r) {
-      if (recordFilterMonth && (r.date || '').slice(0, 7) !== recordFilterMonth) return false;
-      if (recordFilterKind && recordKindOf(r) !== recordFilterKind) return false;
-      if (recordFilterFarm && (r.farmName || '') !== recordFilterFarm) return false;
-      return true;
-    });
+    var filteredRecords = sortedRecords.filter(function (r) { return recordMatchesFilters(r, null); });
 
     var recordRowsHtml = filteredRecords.map(function (r) {
         var badge = r.type === 'in' ? '<span class="badge in">전입</span>'
@@ -1042,9 +1068,9 @@
             '<div class="field"><label>월</label><select data-action="setRecordMonthFilter">' + recordMonthOptionsHtml + '</select></div>' +
             '<div class="field"><label>구분</label><select data-action="setRecordKindFilter">' +
               '<option value="">전체</option>' +
-              '<option value="in"' + (recordFilterKind === 'in' ? ' selected' : '') + '>전입</option>' +
-              '<option value="out_farm"' + (recordFilterKind === 'out_farm' ? ' selected' : '') + '>전출</option>' +
-              '<option value="out_external"' + (recordFilterKind === 'out_external' ? ' selected' : '') + '>외부판매</option>' +
+              recordKindOptions.map(function (k) {
+                return '<option value="' + k + '"' + (k === recordFilterKind ? ' selected' : '') + '>' + KIND_LABELS[k] + '</option>';
+              }).join('') +
             '</select></div>' +
             '<div class="field"><label>농장명</label><select data-action="setRecordFarmFilter">' + recordFarmOptionsHtml + '</select></div>' +
           '</div>' +
@@ -1433,6 +1459,7 @@
   var FMT_HEAD = XLSX_STYLE.addNumFmt('#,##0"두"');
   var FMT_WON = XLSX_STYLE.addNumFmt('#,##0"원"');
   var FMT_KG = XLSX_STYLE.addNumFmt('#,##0.0"kg"');
+  var FMT_WEEK = XLSX_STYLE.addNumFmt('#,##0"주차"');
   var FMT_PCT = XLSX_STYLE.addNumFmt('0.0%');
 
   var FONT_NORMAL = 0;
@@ -1468,6 +1495,7 @@
   var XF_HEAD = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
   var XF_WON = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_WON, align: 'right' });
   var XF_KG = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_KG, align: 'right' });
+  var XF_WEEK = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_WEEK, align: 'right' });
   var XF_PCT = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
   var XF_PCT_GOOD = XLSX_STYLE.addXf({ fontId: FONT_SUCCESS, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
   var XF_PCT_BAD = XLSX_STYLE.addXf({ fontId: FONT_DANGER, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
@@ -1480,6 +1508,7 @@
   var XF_TOTAL_HEAD = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
   var XF_TOTAL_WON = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_WON, align: 'right' });
   var XF_TOTAL_KG = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_KG, align: 'right' });
+  var XF_TOTAL_WEEK = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_WEEK, align: 'right' });
 
   function buildStylesXml() {
     var fontsXml = XLSX_STYLE.fonts.map(function (f) {
@@ -1846,6 +1875,7 @@
         else if (c.type === 'percent') xf = tone === 'tone-success' ? XF_PCT_GOOD : tone === 'tone-danger' ? XF_PCT_BAD : XF_PCT;
         else if (c.unit === 'won') xf = XF_WON;
         else if (c.unit === 'kg') xf = XF_KG;
+        else if (c.unit === 'week') xf = XF_WEEK;
         else if (c.unit === 'head') xf = tone === 'tone-success' ? XF_HEAD_GOOD : tone === 'tone-danger' ? XF_HEAD_BAD : XF_HEAD;
         else xf = XF_NUM;
         b.set(row, col + i, outVal, xf);
@@ -1857,7 +1887,7 @@
         if (i === 0) { b.set(row, col + i, '합계', XF_TOTAL_LABEL); return; }
         if (c.type === 'number') {
           var sum = rows.reduce(function (s2, r2) { return s2 + (Number(r2[c.key]) || 0); }, 0);
-          var xf = c.unit === 'won' ? XF_TOTAL_WON : c.unit === 'kg' ? XF_TOTAL_KG : XF_TOTAL_HEAD;
+          var xf = c.unit === 'won' ? XF_TOTAL_WON : c.unit === 'kg' ? XF_TOTAL_KG : c.unit === 'week' ? XF_TOTAL_WEEK : XF_TOTAL_HEAD;
           b.set(row, col + i, sum, xf);
         } else {
           b.set(row, col + i, '', XF_TOTAL_LABEL);
@@ -1892,7 +1922,7 @@
         { label: '총 전입', value: sumIn, unit: 'head', tone: 'accent' },
         { label: '총 폐사', value: sumDeath2, unit: 'head', tone: sumDeath2 > 0 ? 'danger' : '' },
         { label: '총 출하', value: sumShipped2, unit: 'head', tone: sumShipped2 > 0 ? 'success' : '' },
-        { label: '평균 실육성율', value: rate2, unit: 'percent', tone: sumIn ? (rate2 >= 0.9 ? 'success' : 'danger') : '' }
+        { label: '평균 육성율', value: rate2, unit: 'percent', tone: sumIn ? (rate2 >= 0.9 ? 'success' : 'danger') : '' }
       ];
     }
     if (tabKey === 'feedCost') {
@@ -1942,7 +1972,7 @@
       { label: '전입', key: 'in', unit: 'head' },
       { label: '폐사', key: 'death', unit: 'head' },
       { label: '출하', key: 'shipped', unit: 'head' },
-      { label: '실육성율', key: 'survivalRate', unit: 'percent' }
+      { label: '육성율', key: 'survivalRate', unit: 'percent' }
     ];
     var feedMonthlyCols = [
       { label: '정산예정월', key: 'month' },
@@ -2381,9 +2411,9 @@
     parsed.filter(function (r) { return r.counterpartFarm === '인티-루카농장(이미숙)'; }).forEach(function (r) {
       var base = groupBaseName(r.groupCode);
       if (!base) return;
-      if (!groups[base]) { groups[base] = { farmName: r.farmName, inDateSerial: r.inDateSerial, headIn: 0, claimHead: 0, deathPeriod: 0, shipPeriod: 0 }; order.push(base); }
+      if (!groups[base]) { groups[base] = { farmName: r.farmName, inDateSerial: r.inDateSerial, headIn: 0, totalWeight: 0, claimHead: 0, deathPeriod: 0, shipPeriod: 0 }; order.push(base); }
       var g = groups[base];
-      g.headIn += r.headIn; g.claimHead += r.claimHead; g.deathPeriod += r.deathPeriod; g.shipPeriod += r.shipPeriod;
+      g.headIn += r.headIn; g.totalWeight += r.totalWeight; g.claimHead += r.claimHead; g.deathPeriod += r.deathPeriod; g.shipPeriod += r.shipPeriod;
     });
     var todayStamp = todayMs();
     return order.map(function (base) {
@@ -2394,6 +2424,7 @@
         week: Math.round((todayStamp - inMs) / (7 * DAY_MS)),
         farm: g.farmName,
         in: g.headIn,
+        avgWeight: g.headIn ? Math.round((g.totalWeight / g.headIn) * 10) / 10 : 0,
         claim: g.claimHead,
         netIn: g.headIn - g.claimHead,
         death: g.deathPeriod,
