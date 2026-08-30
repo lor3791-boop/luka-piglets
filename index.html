@@ -21,7 +21,8 @@
     --text-faint: #9AA1AC;
     --accent: #FCD535;
     --accent-strong: #F0B90B;
-    --accent-soft: #F5F5F5;
+    --accent-soft: #FDF6DD;
+    --accent-text: #8A6900;
     --on-accent: #181A20;
     --info: #3B82F6;
     --in: #0ECB81;
@@ -50,7 +51,8 @@
       --border-soft: #23282E;
       --text: #EAECEF;
       --text-faint: #4B5563;
-      --accent-soft: #2B3139;
+      --accent-soft: #2C2712;
+      --accent-text: #FCD535;
       --in-soft: #12271F;
       --out-farm-soft: #2E1B1E;
       --out-ext-soft: #16292A;
@@ -68,7 +70,8 @@
     --border-soft: #23282E;
     --text: #EAECEF;
     --text-faint: #4B5563;
-    --accent-soft: #2B3139;
+    --accent-soft: #2C2712;
+    --accent-text: #FCD535;
     --in-soft: #12271F;
     --out-farm-soft: #2E1B1E;
     --out-ext-soft: #16292A;
@@ -125,14 +128,14 @@
     display: flex; align-items: center; margin-right: auto;
     border: none; background: transparent; padding: 0; cursor: pointer; font-family: inherit;
   }
-  .brand h1 { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.13; text-align: left; }
+  .brand h1 { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.13; text-align: left; }
   .tabs { display: flex; gap: 2px; background: var(--surface-2); padding: 4px; border-radius: var(--radius-full); flex-wrap: wrap; }
   .tab-btn {
-    border: none; background: transparent; color: var(--text-muted);
-    padding: 7px 14px; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;
+    border: none; background: transparent; color: var(--text-muted); font-size: 12.5px;
+    padding: 6px 13px; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;
     transition: background .15s, color .15s; white-space: nowrap;
   }
-  .tab-btn.active { background: var(--surface); color: var(--text); }
+  .tab-btn.active { background: var(--surface); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
   .sync-pill {
     font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
     padding: 5px 10px; border-radius: var(--radius-full); background: var(--surface-2);
@@ -144,12 +147,18 @@
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
   @media (max-width: 760px) { .cards { grid-template-columns: repeat(2, 1fr); } }
   .card {
-    background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--border-soft); border-left: 3px solid var(--border-soft); border-radius: var(--radius);
     padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;
   }
   .card .label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
   .card .value { font-size: 25px; font-weight: 700; }
   .card .sub { font-size: 12px; color: var(--text-faint); }
+  .card.tone-accent { border-left-color: var(--accent); }
+  .card.tone-accent .value { color: var(--accent-text); }
+  .card.tone-danger { border-left-color: var(--danger); }
+  .card.tone-danger .value { color: var(--danger); }
+  .card.tone-success { border-left-color: var(--success); }
+  .card.tone-success .value { color: var(--success); }
 
   section.panel {
     background: var(--surface); border: 1px solid var(--border-soft); border-radius: var(--radius);
@@ -197,6 +206,9 @@
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: var(--surface-2); }
   tbody tr.total-row { font-weight: 700; background: var(--surface-2); }
+  td.tone-danger { color: var(--danger); font-weight: 600; }
+  td.tone-success { color: var(--success); font-weight: 600; }
+  input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
   .inline-input { width: 64px; border: 1px solid var(--border); background: var(--field); color: var(--text); border-radius: var(--radius-sm); padding: 5px 7px; text-align: right; }
   .cell-input { width: 100%; min-width: 72px; border: 1px solid transparent; background: transparent; color: var(--text); padding: 3px 4px; text-align: right; border-radius: 6px; }
   .cell-input:focus { background: var(--field); border-color: var(--border); outline: 2px solid var(--info); }
@@ -672,14 +684,14 @@ try {
       dateKey: 'date',
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
-        { key: 'initIn', label: '최초 전입(두)', type: 'number' },
-        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1 },
-        { key: 'claim', label: '크레임(두)', type: 'number' },
-        { key: 'directSale', label: '외판(두)', type: 'number' },
-        { key: 'netIn', label: '실 전입(두)', type: 'number' },
-        { key: 'death', label: '폐사(두)', type: 'number' },
-        { key: 'shipped', label: '분양(두)', type: 'number' },
-        { key: 'stock', label: '현재고(두)', type: 'number' },
+        { key: 'initIn', label: '최초 전입(두)', type: 'number', unit: 'head' },
+        { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg' },
+        { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
+        { key: 'directSale', label: '외판(두)', type: 'number', unit: 'head' },
+        { key: 'netIn', label: '실 전입(두)', type: 'number', unit: 'head' },
+        { key: 'death', label: '폐사(두)', type: 'number', unit: 'head' },
+        { key: 'shipped', label: '분양(두)', type: 'number', unit: 'head' },
+        { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
         { key: 'survivalRate', label: '육성율', type: 'percent' },
         { key: 'note', label: '비고', type: 'text' }
       ]
@@ -692,12 +704,12 @@ try {
         { key: 'date', label: '날짜', type: 'date' },
         { key: 'week', label: '전입주차', type: 'number' },
         { key: 'farm', label: '분양농장', type: 'text' },
-        { key: 'in', label: '전입(두)', type: 'number' },
-        { key: 'claim', label: '크레임(두)', type: 'number' },
-        { key: 'netIn', label: '실전입(두)', type: 'number' },
-        { key: 'death', label: '폐사(두)', type: 'number' },
-        { key: 'shipped', label: '출하(두)', type: 'number' },
-        { key: 'stock', label: '현재고(두)', type: 'number' },
+        { key: 'in', label: '전입(두)', type: 'number', unit: 'head' },
+        { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
+        { key: 'netIn', label: '실전입(두)', type: 'number', unit: 'head' },
+        { key: 'death', label: '폐사(두)', type: 'number', unit: 'head' },
+        { key: 'shipped', label: '출하(두)', type: 'number', unit: 'head' },
+        { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
         { key: 'survivalRate', label: '실육성율', type: 'percent' },
         { key: 'note', label: '비고', type: 'text' }
       ]
@@ -709,10 +721,10 @@ try {
       columns: [
         { key: 'batchNo', label: '배치번호', type: 'text' },
         { key: 'inDate', label: '전입일자', type: 'date' },
-        { key: 'inHead', label: '전입두수', type: 'number' },
-        { key: 'amount', label: '지급액(계)', type: 'number' },
-        { key: 'settleHead', label: '정산예정두수', type: 'number' },
-        { key: 'perHead', label: '두당금액', type: 'number' },
+        { key: 'inHead', label: '전입두수', type: 'number', unit: 'head' },
+        { key: 'amount', label: '지급액(계)', type: 'number', unit: 'won' },
+        { key: 'settleHead', label: '정산예정두수', type: 'number', unit: 'head' },
+        { key: 'perHead', label: '두당금액', type: 'number', unit: 'won' },
         { key: 'settleMonth', label: '정산예정월', type: 'text' },
         { key: 'settled', label: '정산완료여부', type: 'checkbox' },
         { key: 'note', label: '특이사항', type: 'text' }
@@ -763,6 +775,17 @@ try {
   }
 
   // ---------- 읽기 전용 표 (본 화면) ----------
+  function cellTone(colKey, colType, value, row) {
+    if (colKey === 'death') return (Number(value) || 0) > 0 ? 'tone-danger' : '';
+    if (colKey === 'shipped') return (Number(value) || 0) > 0 ? 'tone-success' : '';
+    if (colType === 'percent') {
+      var denomKey = row.netIn !== undefined ? 'netIn' : (row.in !== undefined ? 'in' : null);
+      var denom = denomKey ? Number(row[denomKey]) || 0 : 0;
+      if (!denom) return '';
+      return (Number(value) || 0) >= 0.9 ? 'tone-success' : 'tone-danger';
+    }
+    return '';
+  }
   function renderStatusTable(tabKey, rows) {
     var def = STATUS_TABLE_DEFS[tabKey];
     var headHtml = def.columns.map(function (c) {
@@ -777,7 +800,10 @@ try {
         else if (c.type === 'checkbox') display = v ? '✓' : '';
         else display = (v === undefined || v === null) ? '' : v;
         var isLeft = (c.type === 'text' || c.type === 'date' || c.type === 'checkbox');
-        return '<td' + (isLeft ? ' class="left"' : ' class="mono"') + '>' + display + '</td>';
+        var tone = cellTone(c.key, c.type, v, row);
+        var cls = isLeft ? 'left' : 'mono';
+        if (tone) cls += ' ' + tone;
+        return '<td class="' + cls + '">' + display + '</td>';
       }).join('');
       return '<tr>' + cells + '</tr>';
     }).join('');
@@ -846,10 +872,10 @@ try {
       rows.forEach(function (r) { sumNetIn += Number(r.netIn) || 0; sumDeath += Number(r.death) || 0; sumShipped += Number(r.shipped) || 0; sumStock += Number(r.stock) || 0; });
       var avgSurvival = sumNetIn ? (sumNetIn - sumDeath) / sumNetIn : 0;
       return [
-        { label: '총 실전입(두)', value: formatNumberCell(sumNetIn) + '두' },
-        { label: '총 폐사(두)', value: formatNumberCell(sumDeath) + '두' },
-        { label: '총 분양(두)', value: formatNumberCell(sumShipped) + '두' },
-        { label: '평균 육성율', value: formatNumberCell(avgSurvival * 100, 1) + '%' }
+        { label: '총 실전입(두)', value: formatNumberCell(sumNetIn) + '두', tone: 'accent' },
+        { label: '총 폐사(두)', value: formatNumberCell(sumDeath) + '두', tone: sumDeath > 0 ? 'danger' : '' },
+        { label: '총 분양(두)', value: formatNumberCell(sumShipped) + '두', tone: sumShipped > 0 ? 'success' : '' },
+        { label: '평균 육성율', value: formatNumberCell(avgSurvival * 100, 1) + '%', tone: sumNetIn ? (avgSurvival >= 0.9 ? 'success' : 'danger') : '' }
       ];
     }
     if (tabKey === 'reship') {
@@ -857,10 +883,10 @@ try {
       rows.forEach(function (r) { sumIn += Number(r.in) || 0; sumDeath2 += Number(r.death) || 0; sumShipped2 += Number(r.shipped) || 0; });
       var avgSurvival2 = sumIn ? (sumIn - sumDeath2) / sumIn : 0;
       return [
-        { label: '총 전입(두)', value: formatNumberCell(sumIn) + '두' },
-        { label: '총 폐사(두)', value: formatNumberCell(sumDeath2) + '두' },
-        { label: '총 출하(두)', value: formatNumberCell(sumShipped2) + '두' },
-        { label: '평균 실육성율', value: formatNumberCell(avgSurvival2 * 100, 1) + '%' }
+        { label: '총 전입(두)', value: formatNumberCell(sumIn) + '두', tone: 'accent' },
+        { label: '총 폐사(두)', value: formatNumberCell(sumDeath2) + '두', tone: sumDeath2 > 0 ? 'danger' : '' },
+        { label: '총 출하(두)', value: formatNumberCell(sumShipped2) + '두', tone: sumShipped2 > 0 ? 'success' : '' },
+        { label: '평균 실육성율', value: formatNumberCell(avgSurvival2 * 100, 1) + '%', tone: sumIn ? (avgSurvival2 >= 0.9 ? 'success' : 'danger') : '' }
       ];
     }
     if (tabKey === 'feedCost') {
@@ -868,16 +894,16 @@ try {
       rows.forEach(function (r) { sumAmount += Number(r.amount) || 0; sumHead += Number(r.inHead) || 0; });
       var perHeadAvg = sumHead ? Math.round(sumAmount / sumHead) : 0;
       return [
-        { label: '총 지급액', value: formatNumberCell(sumAmount) + '원' },
-        { label: '총 전입두수', value: formatNumberCell(sumHead) + '두' },
-        { label: '두당금액(평균)', value: formatNumberCell(perHeadAvg) + '원' }
+        { label: '총 지급액', value: formatNumberCell(sumAmount) + '원', tone: 'accent' },
+        { label: '총 전입두수', value: formatNumberCell(sumHead) + '두', tone: '' },
+        { label: '두당금액(평균)', value: formatNumberCell(perHeadAvg) + '원', tone: '' }
       ];
     }
     return [];
   }
   function renderStatsCards(stats) {
     return '<div class="stat-row">' + stats.map(function (s) {
-      return '<div class="card"><span class="label">' + s.label + '</span><span class="value mono">' + s.value + '</span></div>';
+      return '<div class="card' + (s.tone ? ' tone-' + s.tone : '') + '"><span class="label">' + s.label + '</span><span class="value mono">' + s.value + '</span></div>';
     }).join('') + '</div>';
   }
 
@@ -1490,22 +1516,176 @@ try {
     }
     return s;
   }
-  function buildSheetXml(rows) {
-    var rowsXml = rows.map(function (row, rIdx) {
-      var r = rIdx + 1;
-      var cellsXml = row.map(function (val, cIdx) {
-        var ref = colIndexToLetter(cIdx) + r;
-        if (val === null || val === undefined || val === '') return '';
-        if (typeof val === 'number' && isFinite(val)) return '<c r="' + ref + '"><v>' + val + '</v></c>';
-        return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(val) + '</t></is></c>';
+  function quoteSheetName(name) {
+    return "'" + String(name).replace(/'/g, "''") + "'";
+  }
+
+  // ---------- xlsx style registry ----------
+  var XLSX_STYLE = (function () {
+    var fonts = [{ name: 'Inter', sz: 10, color: 'FF181A20' }];
+    var fills = [{ patternType: 'none' }, { patternType: 'gray125' }];
+    var borders = [{}];
+    var numFmts = [];
+    var xfs = [{ fontId: 0, fillId: 0, borderId: 0, numFmtId: 0, align: null }];
+    return {
+      fonts: fonts, fills: fills, borders: borders, numFmts: numFmts, xfs: xfs,
+      addFont: function (f) { fonts.push(f); return fonts.length - 1; },
+      addFill: function (f) { fills.push(f); return fills.length - 1; },
+      addBorder: function (b) { borders.push(b); return borders.length - 1; },
+      addNumFmt: function (code) { var id = 164 + numFmts.length; numFmts.push({ id: id, code: code }); return id; },
+      addXf: function (xf) { xfs.push(xf); return xfs.length - 1; }
+    };
+  })();
+
+  var FMT_HEAD = XLSX_STYLE.addNumFmt('#,##0"두"');
+  var FMT_WON = XLSX_STYLE.addNumFmt('#,##0"원"');
+  var FMT_KG = XLSX_STYLE.addNumFmt('#,##0.0"kg"');
+  var FMT_PCT = XLSX_STYLE.addNumFmt('0.0%');
+
+  var FONT_NORMAL = 0;
+  var FONT_BOLD = XLSX_STYLE.addFont({ name: 'Inter', sz: 10, bold: true, color: 'FF181A20' });
+  var FONT_TITLE = XLSX_STYLE.addFont({ name: 'Inter', sz: 16, bold: true, color: 'FF181A20' });
+  var FONT_SUBTITLE = XLSX_STYLE.addFont({ name: 'Inter', sz: 11, bold: true, color: 'FF8A6900' });
+  var FONT_MUTED = XLSX_STYLE.addFont({ name: 'Inter', sz: 9, color: 'FF707A8A' });
+  var FONT_MONO = XLSX_STYLE.addFont({ name: 'Consolas', sz: 10, color: 'FF181A20' });
+  var FONT_MONO_BOLD = XLSX_STYLE.addFont({ name: 'Consolas', sz: 10, bold: true, color: 'FF181A20' });
+  var FONT_DANGER = XLSX_STYLE.addFont({ name: 'Consolas', sz: 10, bold: true, color: 'FFD6304A' });
+  var FONT_SUCCESS = XLSX_STYLE.addFont({ name: 'Consolas', sz: 10, bold: true, color: 'FF0A9F68' });
+  var FONT_ACCENT_TEXT = XLSX_STYLE.addFont({ name: 'Consolas', sz: 10, bold: true, color: 'FF8A6900' });
+
+  var FILL_HEADER = XLSX_STYLE.addFill({ patternType: 'solid', fgColor: 'FFFCD535' });
+  var FILL_TOTAL = XLSX_STYLE.addFill({ patternType: 'solid', fgColor: 'FFF5F5F5' });
+  var FILL_SUBTLE = XLSX_STYLE.addFill({ patternType: 'solid', fgColor: 'FFFDF6DD' });
+
+  var BORDER_THIN = XLSX_STYLE.addBorder({ bottom: { style: 'thin', color: 'FFE3E5E8' } });
+  var BORDER_BOX = XLSX_STYLE.addBorder({
+    top: { style: 'thin', color: 'FFD8D8D8' }, bottom: { style: 'thin', color: 'FFD8D8D8' },
+    left: { style: 'thin', color: 'FFD8D8D8' }, right: { style: 'thin', color: 'FFD8D8D8' }
+  });
+
+  var XF_TITLE = XLSX_STYLE.addXf({ fontId: FONT_TITLE, fillId: 0, borderId: 0, numFmtId: 0, align: 'left' });
+  var XF_MUTED = XLSX_STYLE.addXf({ fontId: FONT_MUTED, fillId: 0, borderId: 0, numFmtId: 0, align: 'left' });
+  var XF_SUBTITLE = XLSX_STYLE.addXf({ fontId: FONT_SUBTITLE, fillId: FILL_SUBTLE, borderId: 0, numFmtId: 0, align: 'left' });
+  var XF_HEADER = XLSX_STYLE.addXf({ fontId: FONT_BOLD, fillId: FILL_HEADER, borderId: BORDER_BOX, numFmtId: 0, align: 'center' });
+  var XF_MONTH_HEADER = XLSX_STYLE.addXf({ fontId: FONT_BOLD, fillId: FILL_TOTAL, borderId: BORDER_BOX, numFmtId: 0, align: 'center' });
+  var XF_TEXT = XLSX_STYLE.addXf({ fontId: FONT_NORMAL, fillId: 0, borderId: BORDER_THIN, numFmtId: 0, align: 'left' });
+  var XF_LABEL = XLSX_STYLE.addXf({ fontId: FONT_BOLD, fillId: 0, borderId: BORDER_THIN, numFmtId: 0, align: 'left' });
+  var XF_STATVAL = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: 0, borderId: BORDER_THIN, numFmtId: 0, align: 'right' });
+  var XF_NUM = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: 3, align: 'right' });
+  var XF_HEAD = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
+  var XF_WON = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_WON, align: 'right' });
+  var XF_KG = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_KG, align: 'right' });
+  var XF_PCT = XLSX_STYLE.addXf({ fontId: FONT_MONO, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
+  var XF_PCT_GOOD = XLSX_STYLE.addXf({ fontId: FONT_SUCCESS, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
+  var XF_PCT_BAD = XLSX_STYLE.addXf({ fontId: FONT_DANGER, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_PCT, align: 'right' });
+  var XF_HEAD_GOOD = XLSX_STYLE.addXf({ fontId: FONT_SUCCESS, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
+  var XF_HEAD_BAD = XLSX_STYLE.addXf({ fontId: FONT_DANGER, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
+  var XF_HEAD_ACCENT = XLSX_STYLE.addXf({ fontId: FONT_ACCENT_TEXT, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
+  var XF_WON_ACCENT = XLSX_STYLE.addXf({ fontId: FONT_ACCENT_TEXT, fillId: 0, borderId: BORDER_THIN, numFmtId: FMT_WON, align: 'right' });
+  var XF_TOTAL_LABEL = XLSX_STYLE.addXf({ fontId: FONT_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: 0, align: 'left' });
+  var XF_TOTAL_NUM = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: 3, align: 'right' });
+  var XF_TOTAL_HEAD = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_HEAD, align: 'right' });
+  var XF_TOTAL_WON = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_WON, align: 'right' });
+  var XF_TOTAL_KG = XLSX_STYLE.addXf({ fontId: FONT_MONO_BOLD, fillId: FILL_TOTAL, borderId: BORDER_THIN, numFmtId: FMT_KG, align: 'right' });
+
+  function buildStylesXml() {
+    var fontsXml = XLSX_STYLE.fonts.map(function (f) {
+      return '<font>' +
+        '<sz val="' + (f.sz || 10) + '"/>' +
+        (f.bold ? '<b/>' : '') +
+        '<color rgb="' + (f.color || 'FF181A20') + '"/>' +
+        '<name val="' + xmlEscape(f.name || 'Calibri') + '"/>' +
+        '</font>';
+    }).join('');
+    var fillsXml = XLSX_STYLE.fills.map(function (f) {
+      if (f.patternType === 'solid') {
+        return '<fill><patternFill patternType="solid"><fgColor rgb="' + f.fgColor + '"/><bgColor indexed="64"/></patternFill></fill>';
+      }
+      return '<fill><patternFill patternType="' + (f.patternType || 'none') + '"/></fill>';
+    }).join('');
+    var bordersXml = XLSX_STYLE.borders.map(function (b) {
+      var parts = ['left', 'right', 'top', 'bottom'].map(function (side) {
+        var e = b[side];
+        return e ? '<' + side + ' style="' + e.style + '"><color rgb="' + e.color + '"/></' + side + '>' : '<' + side + '/>';
+      }).join('');
+      return '<border>' + parts + '<diagonal/></border>';
+    }).join('');
+    var numFmtsXml = XLSX_STYLE.numFmts.length
+      ? '<numFmts count="' + XLSX_STYLE.numFmts.length + '">' + XLSX_STYLE.numFmts.map(function (n) {
+          return '<numFmt numFmtId="' + n.id + '" formatCode="' + xmlEscape(n.code) + '"/>';
+        }).join('') + '</numFmts>'
+      : '';
+    var xfsXml = XLSX_STYLE.xfs.map(function (xf) {
+      var alignXml = xf.align ? '<alignment horizontal="' + xf.align + '" vertical="center"/>' : '<alignment vertical="center"/>';
+      return '<xf numFmtId="' + (xf.numFmtId || 0) + '" fontId="' + xf.fontId + '" fillId="' + xf.fillId + '" borderId="' + xf.borderId + '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1">' + alignXml + '</xf>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      numFmtsXml +
+      '<fonts count="' + XLSX_STYLE.fonts.length + '">' + fontsXml + '</fonts>' +
+      '<fills count="' + XLSX_STYLE.fills.length + '">' + fillsXml + '</fills>' +
+      '<borders count="' + XLSX_STYLE.borders.length + '">' + bordersXml + '</borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="' + XLSX_STYLE.xfs.length + '">' + xfsXml + '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+  }
+
+  // ---------- sparse sheet builder ----------
+  function makeSheetBuilder(tabColor) {
+    var rows = {};
+    var merges = [];
+    var colWidths = {};
+    return {
+      rows: rows, merges: merges, colWidths: colWidths, tabColor: tabColor,
+      set: function (r, c, v, s) { if (!rows[r]) rows[r] = {}; rows[r][c] = { v: v, s: s || 0 }; },
+      merge: function (r1, c1, r2, c2) { merges.push([r1, c1, r2, c2]); },
+      setColWidth: function (c, w) { colWidths[c] = w; }
+    };
+  }
+  function buildSheetXmlFromBuilder(b, drawingRid) {
+    var rowNums = Object.keys(b.rows).map(Number).sort(function (a, c) { return a - c; });
+    var rowsXml = rowNums.map(function (r) {
+      var rowMap = b.rows[r];
+      var colIdxs = Object.keys(rowMap).map(Number).sort(function (a, c) { return a - c; });
+      var cellsXml = colIdxs.map(function (c) {
+        var cell = rowMap[c];
+        var ref = colIndexToLetter(c) + r;
+        var sAttr = (cell.s !== undefined && cell.s !== 0) ? ' s="' + cell.s + '"' : '';
+        var val = cell.v;
+        if (val === null || val === undefined || val === '') {
+          return sAttr ? '<c r="' + ref + '"' + sAttr + '/>' : '';
+        }
+        if (typeof val === 'number' && isFinite(val)) return '<c r="' + ref + '"' + sAttr + '><v>' + val + '</v></c>';
+        return '<c r="' + ref + '"' + sAttr + ' t="inlineStr"><is><t xml:space="preserve">' + xmlEscape(val) + '</t></is></c>';
       }).join('');
       return '<row r="' + r + '">' + cellsXml + '</row>';
     }).join('');
+
+    var colIdxsAll = Object.keys(b.colWidths).map(Number);
+    var colsXml = colIdxsAll.length
+      ? '<cols>' + colIdxsAll.map(function (c) {
+          return '<col min="' + (c + 1) + '" max="' + (c + 1) + '" width="' + b.colWidths[c] + '" customWidth="1"/>';
+        }).join('') + '</cols>'
+      : '';
+
+    var mergeXml = b.merges.length
+      ? '<mergeCells count="' + b.merges.length + '">' + b.merges.map(function (m) {
+          return '<mergeCell ref="' + colIndexToLetter(m[1]) + m[0] + ':' + colIndexToLetter(m[3]) + m[2] + '"/>';
+        }).join('') + '</mergeCells>'
+      : '';
+
+    var tabColorXml = b.tabColor ? '<sheetPr><tabColor rgb="' + b.tabColor + '"/></sheetPr>' : '';
+    var drawingXml = drawingRid ? '<drawing r:id="' + drawingRid + '"/>' : '';
+
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      tabColorXml + colsXml +
       '<sheetData>' + rowsXml + '</sheetData>' +
+      mergeXml + drawingXml +
       '</worksheet>';
   }
+
   function buildWorkbookXml(sheetNames) {
     var sheetsXml = sheetNames.map(function (name, i) {
       return '<sheet name="' + xmlEscape(name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>';
@@ -1519,19 +1699,27 @@ try {
     var relsXml = sheetNames.map(function (name, i) {
       return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>';
     }).join('');
+    relsXml += '<Relationship Id="rId' + (sheetNames.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>';
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + relsXml + '</Relationships>';
   }
-  function buildContentTypesXml(sheetCount) {
+  function buildContentTypesXml(sheetCount, drawingCount, chartCount) {
     var overrides = '';
     for (var i = 1; i <= sheetCount; i++) {
       overrides += '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+    }
+    for (var d = 1; d <= drawingCount; d++) {
+      overrides += '<Override PartName="/xl/drawings/drawing' + d + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>';
+    }
+    for (var c = 1; c <= chartCount; c++) {
+      overrides += '<Override PartName="/xl/charts/chart' + c + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>';
     }
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
       '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
       '<Default Extension="xml" ContentType="application/xml"/>' +
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
       overrides +
       '</Types>';
   }
@@ -1541,35 +1729,433 @@ try {
       '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
       '</Relationships>';
   }
+  function buildRelsXmlGeneric(entries) {
+    var relsXml = entries.map(function (e) {
+      return '<Relationship Id="' + e.id + '" Type="' + e.type + '" Target="' + e.target + '"/>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + relsXml + '</Relationships>';
+  }
 
-  function statusRowsForExport(tabKey) {
-    var def = STATUS_TABLE_DEFS[tabKey];
-    var out = [def.columns.map(function (c) { return c.label; })];
-    statusRowsOf(tabKey).forEach(function (r) {
-      out.push(def.columns.map(function (c) {
-        var v = r[c.key];
-        if (c.type === 'percent') return (v === undefined || v === null || v === '') ? '' : Math.round(Number(v) * 1000) / 10;
-        if (c.type === 'checkbox') return v ? '완료' : '';
-        return (v === undefined || v === null) ? '' : v;
-      }));
+  // ---------- charts ----------
+  function buildBarChartXml(spec) {
+    var catRef = spec.sheetName + '!$' + spec.catCol + '$' + spec.catRowStart + ':$' + spec.catCol + '$' + spec.catRowEnd;
+    var seriesXml = spec.series.map(function (s, i) {
+      var valRef = spec.sheetName + '!$' + s.col + '$' + spec.catRowStart + ':$' + s.col + '$' + spec.catRowEnd;
+      return '' +
+        '<c:ser>' +
+        '<c:idx val="' + i + '"/>' +
+        '<c:order val="' + i + '"/>' +
+        '<c:tx><c:v>' + xmlEscape(s.name) + '</c:v></c:tx>' +
+        (s.color ? '<c:spPr><a:solidFill><a:srgbClr val="' + s.color + '"/></a:solidFill></c:spPr>' : '') +
+        '<c:cat><c:strRef><c:f>' + xmlEscape(catRef) + '</c:f></c:strRef></c:cat>' +
+        '<c:val><c:numRef><c:f>' + xmlEscape(valRef) + '</c:f></c:numRef></c:val>' +
+        '</c:ser>';
+    }).join('');
+    var titleXml = spec.title
+      ? '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1100" b="1"/></a:pPr><a:r><a:rPr lang="ko-KR" sz="1100" b="1"/><a:t>' + xmlEscape(spec.title) + '</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>'
+      : '<c:autoTitleDeleted val="1"/>';
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<c:chart>' +
+      titleXml +
+      '<c:plotArea>' +
+      '<c:layout/>' +
+      '<c:barChart>' +
+      '<c:barDir val="col"/>' +
+      '<c:grouping val="clustered"/>' +
+      '<c:varyColors val="0"/>' +
+      seriesXml +
+      '<c:axId val="111111111"/>' +
+      '<c:axId val="222222222"/>' +
+      '</c:barChart>' +
+      '<c:catAx><c:axId val="111111111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:txPr><a:bodyPr rot="-2700000" vert="horz"/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="800"/></a:pPr><a:endParaRPr lang="ko-KR"/></a:p></c:txPr><c:crossAx val="222222222"/></c:catAx>' +
+      '<c:valAx><c:axId val="222222222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:crossAx val="111111111"/></c:valAx>' +
+      '</c:plotArea>' +
+      '<c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>' +
+      '<c:plotVisOnly val="1"/>' +
+      '</c:chart>' +
+      '</c:chartSpace>';
+  }
+  function buildDrawingXml(anchors) {
+    var anchorsXml = anchors.map(function (a, i) {
+      return '' +
+        '<xdr:twoCellAnchor>' +
+        '<xdr:from><xdr:col>' + a.fromCol + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + a.fromRow + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>' +
+        '<xdr:to><xdr:col>' + a.toCol + '</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>' + a.toRow + '</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>' +
+        '<xdr:graphicFrame macro="">' +
+        '<xdr:nvGraphicFramePr>' +
+        '<xdr:cNvPr id="' + (i + 2) + '" name="' + xmlEscape(a.name) + '"/>' +
+        '<xdr:cNvGraphicFramePr/>' +
+        '</xdr:nvGraphicFramePr>' +
+        '<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>' +
+        '<a:graphic>' +
+        '<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">' +
+        '<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="' + a.rId + '"/>' +
+        '</a:graphicData>' +
+        '</a:graphic>' +
+        '</xdr:graphicFrame>' +
+        '<xdr:clientData/>' +
+        '</xdr:twoCellAnchor>';
+    }).join('');
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+      anchorsXml +
+      '</xdr:wsDr>';
+  }
+  function makeChartRegistry() {
+    var chartFiles = [];
+    var drawingFiles = [];
+    return {
+      chartFiles: chartFiles, drawingFiles: drawingFiles,
+      addChartsForSheet: function (chartSpecs) {
+        if (!chartSpecs || !chartSpecs.length) return null;
+        var drawingIdx = drawingFiles.length + 1;
+        var anchors = [];
+        var relEntries = [];
+        chartSpecs.forEach(function (spec, i) {
+          var chartIdx = chartFiles.length + 1;
+          chartFiles.push({ filename: 'chart' + chartIdx + '.xml', xml: buildBarChartXml(spec) });
+          var localRid = 'rId' + (i + 1);
+          relEntries.push({ id: localRid, type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart', target: '../charts/chart' + chartIdx + '.xml' });
+          anchors.push({ fromCol: spec.fromCol, fromRow: spec.fromRow, toCol: spec.toCol, toRow: spec.toRow, name: 'Chart' + chartIdx, rId: localRid });
+        });
+        drawingFiles.push({ filename: 'drawing' + drawingIdx + '.xml', xml: buildDrawingXml(anchors), relsXml: buildRelsXmlGeneric(relEntries) });
+        return drawingIdx;
+      }
+    };
+  }
+
+  // ---------- monthly aggregates ----------
+  function lukaStatusMonthlyAggregate(rows) {
+    var byMonth = {};
+    rows.forEach(function (r) {
+      var mk = (r.date || '').slice(0, 7);
+      if (!mk) return;
+      if (!byMonth[mk]) byMonth[mk] = { month: mk, netIn: 0, death: 0, shipped: 0 };
+      byMonth[mk].netIn += Number(r.netIn) || 0;
+      byMonth[mk].death += Number(r.death) || 0;
+      byMonth[mk].shipped += Number(r.shipped) || 0;
     });
-    return out;
+    return Object.keys(byMonth).sort().map(function (mk) {
+      var g = byMonth[mk];
+      g.survivalRate = g.netIn ? (g.netIn - g.death) / g.netIn : 0;
+      return g;
+    });
+  }
+  function reshipMonthlyAggregate(rows) {
+    var byMonth = {};
+    rows.forEach(function (r) {
+      var mk = (r.date || '').slice(0, 7);
+      if (!mk) return;
+      if (!byMonth[mk]) byMonth[mk] = { month: mk, in: 0, death: 0, shipped: 0 };
+      byMonth[mk].in += Number(r.in) || 0;
+      byMonth[mk].death += Number(r.death) || 0;
+      byMonth[mk].shipped += Number(r.shipped) || 0;
+    });
+    return Object.keys(byMonth).sort().map(function (mk) {
+      var g = byMonth[mk];
+      g.survivalRate = g.in ? (g.in - g.death) / g.in : 0;
+      return g;
+    });
+  }
+  function feedCostMonthlyAggregate(rows) {
+    var byMonth = {};
+    rows.forEach(function (r) {
+      var mk = (r.settleMonth || '').trim();
+      if (!mk) return;
+      if (!byMonth[mk]) byMonth[mk] = { month: mk, amount: 0, head: 0 };
+      byMonth[mk].amount += Number(r.amount) || 0;
+      byMonth[mk].head += Number(r.inHead) || 0;
+    });
+    return Object.keys(byMonth).sort().map(function (mk) {
+      var g = byMonth[mk];
+      g.perHead = g.head ? Math.round(g.amount / g.head) : 0;
+      return g;
+    });
+  }
+
+  // ---------- sheet-content writers ----------
+  function statValueXf(unit, tone) {
+    if (tone === 'success') return unit === 'percent' ? XF_PCT_GOOD : XF_HEAD_GOOD;
+    if (tone === 'danger') return unit === 'percent' ? XF_PCT_BAD : XF_HEAD_BAD;
+    if (tone === 'accent') return unit === 'won' ? XF_WON_ACCENT : XF_HEAD_ACCENT;
+    if (unit === 'percent') return XF_PCT;
+    if (unit === 'won') return XF_WON;
+    return XF_HEAD;
+  }
+  function writeStatsBlock(b, row, col, title, statsRaw) {
+    b.set(row, col, title, XF_SUBTITLE);
+    b.merge(row, col, row, col + 1);
+    row++;
+    statsRaw.forEach(function (s) {
+      b.set(row, col, s.label, XF_LABEL);
+      b.set(row, col + 1, s.value, statValueXf(s.unit, s.tone));
+      row++;
+    });
+    return row + 1;
+  }
+  function writeMonthlyTable(b, row, col, title, monthlyRows, cols) {
+    b.set(row, col, title, XF_SUBTITLE);
+    b.merge(row, col, row, col + cols.length - 1);
+    row++;
+    cols.forEach(function (c, i) { b.set(row, col + i, c.label, XF_MONTH_HEADER); });
+    row++;
+    var firstDataRow = row;
+    if (!monthlyRows.length) {
+      b.set(row, col, '데이터 없음', XF_TEXT);
+      row++;
+      return { nextRow: row + 1, headerRow: firstDataRow - 1, firstDataRow: -1, lastDataRow: -1 };
+    }
+    monthlyRows.forEach(function (g) {
+      cols.forEach(function (c, i) {
+        var v = g[c.key];
+        if (i === 0) { b.set(row, col + i, v, XF_TEXT); return; }
+        var xf = c.unit === 'percent' ? XF_PCT : c.unit === 'won' ? XF_WON : XF_HEAD;
+        b.set(row, col + i, v, xf);
+      });
+      row++;
+    });
+    var lastDataRow = row - 1;
+    return { nextRow: row + 1, headerRow: firstDataRow - 1, firstDataRow: firstDataRow, lastDataRow: lastDataRow };
+  }
+  function buildMonthlySectionChartSpec(tableInfo, title, col, cols, seriesKeys, seriesColors, sheetNameForRefs) {
+    if (!tableInfo || tableInfo.lastDataRow < 0) return null;
+    var catCol = colIndexToLetter(col);
+    var series = seriesKeys.map(function (key, i) {
+      var idxInCols = cols.findIndex(function (c) { return c.key === key; });
+      return { name: cols[idxInCols].label, col: colIndexToLetter(col + idxInCols), color: seriesColors[i] };
+    });
+    var chartFromRow = tableInfo.nextRow - 1;
+    return {
+      spec: {
+        title: title, sheetName: sheetNameForRefs, catCol: catCol,
+        catRowStart: tableInfo.firstDataRow, catRowEnd: tableInfo.lastDataRow,
+        series: series, fromCol: col, fromRow: chartFromRow, toCol: col + 6, toRow: chartFromRow + 15
+      },
+      nextRow: chartFromRow + 17
+    };
+  }
+  function writeDataTable(b, row, col, tabKey, rows) {
+    var def = STATUS_TABLE_DEFS[tabKey];
+    b.set(row, col, def.title, XF_TITLE);
+    b.merge(row, col, row, col + def.columns.length - 1);
+    row += 2;
+    def.columns.forEach(function (c, i) { b.set(row, col + i, c.label, XF_HEADER); });
+    row++;
+    rows.forEach(function (r) {
+      def.columns.forEach(function (c, i) {
+        var v = r[c.key];
+        var tone = cellTone(c.key, c.type, v, r);
+        var xf, outVal = (v === undefined || v === null) ? '' : v;
+        if (c.type === 'text' || c.type === 'date') xf = XF_TEXT;
+        else if (c.type === 'checkbox') { xf = XF_TEXT; outVal = v ? '완료' : ''; }
+        else if (c.type === 'percent') xf = tone === 'tone-success' ? XF_PCT_GOOD : tone === 'tone-danger' ? XF_PCT_BAD : XF_PCT;
+        else if (c.unit === 'won') xf = XF_WON;
+        else if (c.unit === 'kg') xf = XF_KG;
+        else if (c.unit === 'head') xf = tone === 'tone-success' ? XF_HEAD_GOOD : tone === 'tone-danger' ? XF_HEAD_BAD : XF_HEAD;
+        else xf = XF_NUM;
+        b.set(row, col + i, outVal, xf);
+      });
+      row++;
+    });
+    if (rows.length) {
+      def.columns.forEach(function (c, i) {
+        if (i === 0) { b.set(row, col + i, '합계', XF_TOTAL_LABEL); return; }
+        if (c.type === 'number') {
+          var sum = rows.reduce(function (s2, r2) { return s2 + (Number(r2[c.key]) || 0); }, 0);
+          var xf = c.unit === 'won' ? XF_TOTAL_WON : c.unit === 'kg' ? XF_TOTAL_KG : XF_TOTAL_HEAD;
+          b.set(row, col + i, sum, xf);
+        } else {
+          b.set(row, col + i, '', XF_TOTAL_LABEL);
+        }
+      });
+      row++;
+    }
+    def.columns.forEach(function (c, i) {
+      var w = c.type === 'text' ? (c.key === 'note' ? 18 : 12) : c.type === 'date' ? 11 : 10;
+      b.setColWidth(col + i, w);
+    });
+    return row + 1;
+  }
+
+  function computeStatusStatsRaw(tabKey, rows) {
+    if (tabKey === 'lukaStatus') {
+      var sumNetIn = 0, sumDeath = 0, sumShipped = 0;
+      rows.forEach(function (r) { sumNetIn += Number(r.netIn) || 0; sumDeath += Number(r.death) || 0; sumShipped += Number(r.shipped) || 0; });
+      var rate = sumNetIn ? (sumNetIn - sumDeath) / sumNetIn : 0;
+      return [
+        { label: '총 실전입', value: sumNetIn, unit: 'head', tone: 'accent' },
+        { label: '총 폐사', value: sumDeath, unit: 'head', tone: sumDeath > 0 ? 'danger' : '' },
+        { label: '총 분양', value: sumShipped, unit: 'head', tone: sumShipped > 0 ? 'success' : '' },
+        { label: '평균 육성율', value: rate, unit: 'percent', tone: sumNetIn ? (rate >= 0.9 ? 'success' : 'danger') : '' }
+      ];
+    }
+    if (tabKey === 'reship') {
+      var sumIn = 0, sumDeath2 = 0, sumShipped2 = 0;
+      rows.forEach(function (r) { sumIn += Number(r.in) || 0; sumDeath2 += Number(r.death) || 0; sumShipped2 += Number(r.shipped) || 0; });
+      var rate2 = sumIn ? (sumIn - sumDeath2) / sumIn : 0;
+      return [
+        { label: '총 전입', value: sumIn, unit: 'head', tone: 'accent' },
+        { label: '총 폐사', value: sumDeath2, unit: 'head', tone: sumDeath2 > 0 ? 'danger' : '' },
+        { label: '총 출하', value: sumShipped2, unit: 'head', tone: sumShipped2 > 0 ? 'success' : '' },
+        { label: '평균 실육성율', value: rate2, unit: 'percent', tone: sumIn ? (rate2 >= 0.9 ? 'success' : 'danger') : '' }
+      ];
+    }
+    if (tabKey === 'feedCost') {
+      var sumAmount = 0, sumHead = 0;
+      rows.forEach(function (r) { sumAmount += Number(r.amount) || 0; sumHead += Number(r.inHead) || 0; });
+      var perHeadAvg = sumHead ? Math.round(sumAmount / sumHead) : 0;
+      return [
+        { label: '총 지급액', value: sumAmount, unit: 'won', tone: 'accent' },
+        { label: '총 전입두수', value: sumHead, unit: 'head', tone: '' },
+        { label: '두당금액(평균)', value: perHeadAvg, unit: 'won', tone: '' }
+      ];
+    }
+    return [];
   }
 
   function buildExportWorkbookBlob() {
     var encoder = new TextEncoder();
-    var sheetNames = ['후기자돈사 전입현황', '재분양돈군 현황', '사육비산출'];
-    var sheetsData = [statusRowsForExport('lukaStatus'), statusRowsForExport('reship'), statusRowsForExport('feedCost')];
+    var today = toISO(todayMs());
 
-    var files = [
-      { name: '[Content_Types].xml', data: encoder.encode(buildContentTypesXml(sheetsData.length)) },
-      { name: '_rels/.rels', data: encoder.encode(buildRootRelsXml()) },
-      { name: 'xl/workbook.xml', data: encoder.encode(buildWorkbookXml(sheetNames)) },
-      { name: 'xl/_rels/workbook.xml.rels', data: encoder.encode(buildWorkbookRelsXml(sheetNames)) }
+    var SUMMARY_SHEET_NAME = '종합성적';
+    var LUKA_SHEET_NAME = '후기자돈사 전입현황';
+    var RESHIP_SHEET_NAME = '재분양돈군 현황';
+    var FEED_SHEET_NAME = '사육비산출';
+    var TAB_COLOR = 'FFFCD535';
+
+    var lukaRows = statusRowsOf('lukaStatus');
+    var reshipRows = statusRowsOf('reship');
+    var feedRows = statusRowsOf('feedCost');
+
+    var lukaRaw = computeStatusStatsRaw('lukaStatus', lukaRows);
+    var reshipRaw = computeStatusStatsRaw('reship', reshipRows);
+    var feedRaw = computeStatusStatsRaw('feedCost', feedRows);
+
+    var lukaMonthly = lukaStatusMonthlyAggregate(lukaRows);
+    var reshipMonthly = reshipMonthlyAggregate(reshipRows);
+    var feedMonthly = feedCostMonthlyAggregate(feedRows);
+
+    var lukaMonthlyCols = [
+      { label: '월', key: 'month' },
+      { label: '실전입', key: 'netIn', unit: 'head' },
+      { label: '폐사', key: 'death', unit: 'head' },
+      { label: '분양', key: 'shipped', unit: 'head' },
+      { label: '육성율', key: 'survivalRate', unit: 'percent' }
     ];
-    sheetsData.forEach(function (rows, i) {
-      files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: encoder.encode(buildSheetXml(rows)) });
+    var reshipMonthlyCols = [
+      { label: '월', key: 'month' },
+      { label: '전입', key: 'in', unit: 'head' },
+      { label: '폐사', key: 'death', unit: 'head' },
+      { label: '출하', key: 'shipped', unit: 'head' },
+      { label: '실육성율', key: 'survivalRate', unit: 'percent' }
+    ];
+    var feedMonthlyCols = [
+      { label: '정산예정월', key: 'month' },
+      { label: '총지급액', key: 'amount', unit: 'won' },
+      { label: '총전입두수', key: 'head', unit: 'head' },
+      { label: '두당금액', key: 'perHead', unit: 'won' }
+    ];
+
+    // ---- Sheet: 후기자돈사 전입현황 ----
+    var b2 = makeSheetBuilder(TAB_COLOR);
+    writeDataTable(b2, 1, 0, 'lukaStatus', lukaRows);
+    var rightCol2 = STATUS_TABLE_DEFS.lukaStatus.columns.length + 1;
+    var r2 = writeStatsBlock(b2, 1, rightCol2, '전체 성적', lukaRaw);
+    var mTable2 = writeMonthlyTable(b2, r2, rightCol2, '월별 성적 비교', lukaMonthly, lukaMonthlyCols);
+    var chartSpecs2 = [];
+    var cr2 = buildMonthlySectionChartSpec(mTable2, '월별 성적 비교', rightCol2, lukaMonthlyCols, ['netIn', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(LUKA_SHEET_NAME));
+    if (cr2) chartSpecs2.push(cr2.spec);
+    for (var wi2 = 0; wi2 < 6; wi2++) b2.setColWidth(rightCol2 + wi2, wi2 === 0 ? 14 : 12);
+
+    // ---- Sheet: 재분양돈군 현황 ----
+    var b3 = makeSheetBuilder(TAB_COLOR);
+    writeDataTable(b3, 1, 0, 'reship', reshipRows);
+    var rightCol3 = STATUS_TABLE_DEFS.reship.columns.length + 1;
+    var r3 = writeStatsBlock(b3, 1, rightCol3, '전체 성적', reshipRaw);
+    var mTable3 = writeMonthlyTable(b3, r3, rightCol3, '월별 성적 비교', reshipMonthly, reshipMonthlyCols);
+    var chartSpecs3 = [];
+    var cr3 = buildMonthlySectionChartSpec(mTable3, '월별 성적 비교', rightCol3, reshipMonthlyCols, ['in', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(RESHIP_SHEET_NAME));
+    if (cr3) chartSpecs3.push(cr3.spec);
+    for (var wi3 = 0; wi3 < 6; wi3++) b3.setColWidth(rightCol3 + wi3, wi3 === 0 ? 14 : 12);
+
+    // ---- Sheet: 사육비산출 ----
+    var b4 = makeSheetBuilder(TAB_COLOR);
+    writeDataTable(b4, 1, 0, 'feedCost', feedRows);
+    var rightCol4 = STATUS_TABLE_DEFS.feedCost.columns.length + 1;
+    var r4 = writeStatsBlock(b4, 1, rightCol4, '전체 성적', feedRaw);
+    var mTable4 = writeMonthlyTable(b4, r4, rightCol4, '정산예정월별 사육비 비교', feedMonthly, feedMonthlyCols);
+    var chartSpecs4 = [];
+    var cr4 = buildMonthlySectionChartSpec(mTable4, '정산예정월별 사육비 비교', rightCol4, feedMonthlyCols, ['amount'], ['FCD535'], quoteSheetName(FEED_SHEET_NAME));
+    if (cr4) chartSpecs4.push(cr4.spec);
+    for (var wi4 = 0; wi4 < 6; wi4++) b4.setColWidth(rightCol4 + wi4, wi4 === 0 ? 14 : 12);
+
+    // ---- Sheet: 종합성적 (summary, first) ----
+    var b1 = makeSheetBuilder(TAB_COLOR);
+    var row1 = 1;
+    b1.set(row1, 0, '후기자돈사 운영현황 — 종합성적', XF_TITLE);
+    b1.merge(row1, 0, row1, 6);
+    row1++;
+    b1.set(row1, 0, '기준일: ' + today, XF_MUTED);
+    row1 += 2;
+
+    row1 = writeStatsBlock(b1, row1, 0, '1. 후기자돈 전입현황 — 전체 성적', lukaRaw);
+    var mTable1a = writeMonthlyTable(b1, row1, 0, '월별 성적 비교', lukaMonthly, lukaMonthlyCols);
+    var chartSpecs1 = [];
+    var cr1a = buildMonthlySectionChartSpec(mTable1a, '후기자돈 전입현황 — 월별 성적 비교', 0, lukaMonthlyCols, ['netIn', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
+    row1 = cr1a ? cr1a.nextRow : mTable1a.nextRow;
+    if (cr1a) chartSpecs1.push(cr1a.spec);
+
+    row1 = writeStatsBlock(b1, row1, 0, '2. 재분양돈군 현황 — 전체 성적', reshipRaw);
+    var mTable1b = writeMonthlyTable(b1, row1, 0, '월별 성적 비교', reshipMonthly, reshipMonthlyCols);
+    var cr1b = buildMonthlySectionChartSpec(mTable1b, '재분양돈군 현황 — 월별 성적 비교', 0, reshipMonthlyCols, ['in', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
+    row1 = cr1b ? cr1b.nextRow : mTable1b.nextRow;
+    if (cr1b) chartSpecs1.push(cr1b.spec);
+
+    row1 = writeStatsBlock(b1, row1, 0, '3. 월대사육비 — 전체 성적', feedRaw);
+    var mTable1c = writeMonthlyTable(b1, row1, 0, '정산예정월별 사육비 비교', feedMonthly, feedMonthlyCols);
+    var cr1c = buildMonthlySectionChartSpec(mTable1c, '정산예정월별 사육비 비교', 0, feedMonthlyCols, ['amount'], ['FCD535'], quoteSheetName(SUMMARY_SHEET_NAME));
+    row1 = cr1c ? cr1c.nextRow : mTable1c.nextRow;
+    if (cr1c) chartSpecs1.push(cr1c.spec);
+
+    b1.setColWidth(0, 16);
+    for (var wi1 = 1; wi1 <= 6; wi1++) b1.setColWidth(wi1, 12);
+
+    var sheetBuilders = [b1, b2, b3, b4];
+    var sheetNames = [SUMMARY_SHEET_NAME, LUKA_SHEET_NAME, RESHIP_SHEET_NAME, FEED_SHEET_NAME];
+    var chartSpecsPerSheet = [chartSpecs1, chartSpecs2, chartSpecs3, chartSpecs4];
+
+    var chartReg = makeChartRegistry();
+    var drawingIdxPerSheet = chartSpecsPerSheet.map(function (specs) { return chartReg.addChartsForSheet(specs); });
+
+    var files = [];
+    files.push({ name: '_rels/.rels', data: encoder.encode(buildRootRelsXml()) });
+    files.push({ name: 'xl/workbook.xml', data: encoder.encode(buildWorkbookXml(sheetNames)) });
+    files.push({ name: 'xl/_rels/workbook.xml.rels', data: encoder.encode(buildWorkbookRelsXml(sheetNames)) });
+    files.push({ name: 'xl/styles.xml', data: encoder.encode(buildStylesXml()) });
+
+    sheetBuilders.forEach(function (b, i) {
+      var drawingIdx = drawingIdxPerSheet[i];
+      var drawingRid = drawingIdx ? 'rId1' : null;
+      files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: encoder.encode(buildSheetXmlFromBuilder(b, drawingRid)) });
+      if (drawingIdx) {
+        files.push({
+          name: 'xl/worksheets/_rels/sheet' + (i + 1) + '.xml.rels',
+          data: encoder.encode(buildRelsXmlGeneric([{ id: 'rId1', type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing', target: '../drawings/drawing' + drawingIdx + '.xml' }]))
+        });
+      }
     });
+
+    chartReg.drawingFiles.forEach(function (d) {
+      files.push({ name: 'xl/drawings/' + d.filename, data: encoder.encode(d.xml) });
+      files.push({ name: 'xl/drawings/_rels/' + d.filename + '.rels', data: encoder.encode(d.relsXml) });
+    });
+    chartReg.chartFiles.forEach(function (c) {
+      files.push({ name: 'xl/charts/' + c.filename, data: encoder.encode(c.xml) });
+    });
+
+    files.unshift({ name: '[Content_Types].xml', data: encoder.encode(buildContentTypesXml(sheetNames.length, chartReg.drawingFiles.length, chartReg.chartFiles.length)) });
 
     var zipBytes = buildZip(files);
     return new Blob([zipBytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
