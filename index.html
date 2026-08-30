@@ -7,91 +7,72 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐖</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Geist+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #FFFFFF;
     --surface: #FFFFFF;
-    --surface-2: #F5F6F7;
+    --surface-2: #F5F5F5;
     --field: #FFFFFF;
-    --border: #E3E5E8;
-    --border-soft: #EEF0F2;
-    --text: #0E1116;
-    --text-muted: #6B7280;
-    --text-faint: #9CA3AF;
-    --accent: #0E1116;
-    --accent-strong: #000000;
-    --accent-soft: #F5F6F7;
-    --brand-green: #00B67A;
-    --brand-green-soft: #E3F9F0;
-    --in: #2A6FDB;
-    --in-soft: #E8F0FD;
-    --out-farm: #B0651A;
-    --out-farm-soft: #F5E9D8;
-    --out-ext: #7C5AC4;
-    --out-ext-soft: #EFE8FA;
-    --danger: #D64545;
-    --danger-soft: #FBE9E9;
-    --success: #00B67A;
-    --success-soft: #E3F9F0;
-    --shadow: rgba(14, 17, 22, 0.06);
+    --border: #EAECEF;
+    --border-soft: #F0F1F3;
+    --text: #181A20;
+    --text-muted: #707A8A;
+    --text-faint: #9AA1AC;
+    --accent: #FCD535;
+    --accent-strong: #F0B90B;
+    --accent-soft: #F5F5F5;
+    --on-accent: #181A20;
+    --info: #3B82F6;
+    --in: #0ECB81;
+    --in-soft: #E3FCEF;
+    --out-farm: #F6465D;
+    --out-farm-soft: #FDE7EA;
+    --out-ext: #2DBDB6;
+    --out-ext-soft: #E3F7F6;
+    --danger: #F6465D;
+    --danger-soft: #FDE7EA;
+    --success: #0ECB81;
+    --success-soft: #E3FCEF;
+    --shadow: rgba(24, 26, 32, 0.06);
     --radius: 12px;
     --radius-sm: 8px;
+    --radius-btn: 6px;
     --radius-full: 999px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0B0D10;
-      --surface: #14171B;
-      --surface-2: #1B1F24;
-      --field: #14171B;
-      --border: #262B31;
-      --border-soft: #1D2126;
-      --text: #F1F2F4;
-      --text-muted: #9CA3AF;
-      --text-faint: #6B7280;
-      --accent: #F1F2F4;
-      --accent-strong: #FFFFFF;
-      --accent-soft: #1B1F24;
-      --brand-green: #2ED9A0;
-      --brand-green-soft: #12271F;
-      --in: #6FA0F0;
-      --in-soft: #182640;
-      --out-farm: #E0A25C;
-      --out-farm-soft: #302011;
-      --out-ext: #B79AE8;
-      --out-ext-soft: #251C36;
-      --danger: #EA8A8A;
-      --danger-soft: #2E1B1B;
-      --success: #2ED9A0;
+      --bg: #0B0E11;
+      --surface: #1E2329;
+      --surface-2: #2B3139;
+      --field: #1E2329;
+      --border: #2B3139;
+      --border-soft: #23282E;
+      --text: #EAECEF;
+      --text-faint: #4B5563;
+      --accent-soft: #2B3139;
+      --in-soft: #12271F;
+      --out-farm-soft: #2E1B1E;
+      --out-ext-soft: #16292A;
+      --danger-soft: #2E1B1E;
       --success-soft: #12271F;
       --shadow: rgba(0, 0, 0, 0.4);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0B0D10;
-    --surface: #14171B;
-    --surface-2: #1B1F24;
-    --field: #14171B;
-    --border: #262B31;
-    --border-soft: #1D2126;
-    --text: #F1F2F4;
-    --text-muted: #9CA3AF;
-    --text-faint: #6B7280;
-    --accent: #F1F2F4;
-    --accent-strong: #FFFFFF;
-    --accent-soft: #1B1F24;
-    --brand-green: #2ED9A0;
-    --brand-green-soft: #12271F;
-    --in: #6FA0F0;
-    --in-soft: #182640;
-    --out-farm: #E0A25C;
-    --out-farm-soft: #302011;
-    --out-ext: #B79AE8;
-    --out-ext-soft: #251C36;
-    --danger: #EA8A8A;
-    --danger-soft: #2E1B1B;
-    --success: #2ED9A0;
+    --bg: #0B0E11;
+    --surface: #1E2329;
+    --surface-2: #2B3139;
+    --field: #1E2329;
+    --border: #2B3139;
+    --border-soft: #23282E;
+    --text: #EAECEF;
+    --text-faint: #4B5563;
+    --accent-soft: #2B3139;
+    --in-soft: #12271F;
+    --out-farm-soft: #2E1B1E;
+    --out-ext-soft: #16292A;
+    --danger-soft: #2E1B1E;
     --success-soft: #12271F;
     --shadow: rgba(0, 0, 0, 0.4);
   }
@@ -106,7 +87,7 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-  .mono { font-family: 'Geist Mono', 'IBM Plex Mono', 'Consolas', monospace; font-variant-numeric: tabular-nums; }
+  .mono { font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Consolas', monospace; font-variant-numeric: tabular-nums; }
   h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 700; letter-spacing: 0; }
   button { font-family: inherit; }
   input, select, button { font-size: 14px; }
@@ -126,8 +107,8 @@
   .pin-box p { font-size: 13px; color: var(--text-muted); margin: 0 0 16px; }
   .pin-box form { display: flex; gap: 8px; }
   .pin-box input {
-    flex: 1; min-width: 0; border: none; background: var(--field); color: var(--text);
-    border-radius: var(--radius-full); padding: 9px 14px; font-size: 16px; letter-spacing: .1em; text-align: center;
+    flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--field); color: var(--text);
+    border-radius: var(--radius-sm); padding: 9px 14px; font-size: 16px; letter-spacing: .1em; text-align: center;
   }
   .pin-error { color: var(--danger); font-size: 12.5px; margin: 10px 0 0 !important; }
 
@@ -185,15 +166,15 @@
     border-radius: var(--radius-sm); padding: 8px 11px; min-width: 0;
   }
   .field input:focus, .field select:focus, button:focus-visible {
-    outline: 2px solid var(--brand-green); outline-offset: 1px;
+    outline: 2px solid var(--info); outline-offset: 1px;
   }
   .field.grow { flex: 1 1 160px; }
   .field.num input { width: 100px; }
   .field.date input { width: 148px; }
 
   .btn {
-    border: none; border-radius: var(--radius-full); padding: 9px 18px; cursor: pointer; font-weight: 600;
-    background: var(--accent); color: var(--bg);
+    border: none; border-radius: var(--radius-btn); padding: 9px 18px; cursor: pointer; font-weight: 600;
+    background: var(--accent); color: var(--on-accent);
   }
   .btn:hover { background: var(--accent-strong); }
   .btn.ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
@@ -218,7 +199,7 @@
   tbody tr.total-row { font-weight: 700; background: var(--surface-2); }
   .inline-input { width: 64px; border: 1px solid var(--border); background: var(--field); color: var(--text); border-radius: var(--radius-sm); padding: 5px 7px; text-align: right; }
   .cell-input { width: 100%; min-width: 72px; border: 1px solid transparent; background: transparent; color: var(--text); padding: 3px 4px; text-align: right; border-radius: 6px; }
-  .cell-input:focus { background: var(--field); border-color: var(--border); outline: 2px solid var(--brand-green); }
+  .cell-input:focus { background: var(--field); border-color: var(--border); outline: 2px solid var(--info); }
   .cell-input.left { text-align: left; }
   .week-hi { background: var(--accent-soft) !important; }
 
@@ -235,8 +216,8 @@
     min-height: 88px; padding: 5px 6px; display: flex; flex-direction: column; gap: 3px; position: relative;
   }
   .cal-day.outside { background: var(--bg); color: var(--text-faint); }
-  .cal-day.today { box-shadow: inset 0 0 0 2px var(--brand-green); }
-  .cal-daynum { font-size: 12px; font-weight: 600; font-family: 'Geist Mono', 'IBM Plex Mono', monospace; }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-daynum { font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
   .cal-chip { font-size: 10.5px; font-weight: 600; border-radius: 6px; padding: 1px 4px; line-height: 1.4; display: block; }
   .cal-chip .fname { font-weight: 500; opacity: .85; }
   .cal-chip.in { background: var(--in-soft); color: var(--in); }
@@ -258,7 +239,7 @@
 
   .icon-btn {
     display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
-    border-radius: var(--radius-full); border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: var(--radius-btn); border: 1px solid var(--border); background: var(--surface); color: var(--text);
     cursor: pointer; font-size: 15px; padding: 0;
   }
   .icon-btn:hover { background: var(--surface-2); }
@@ -267,7 +248,7 @@
   @media (max-width: 760px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
 
   .modal-backdrop {
-    position: fixed; inset: 0; z-index: 200; background: rgba(14, 17, 22, 0.5);
+    position: fixed; inset: 0; z-index: 200; background: rgba(11, 14, 17, 0.6);
     display: flex; align-items: center; justify-content: center; padding: 24px;
   }
   .modal-panel {
@@ -733,7 +714,7 @@ try {
         { key: 'settleHead', label: '정산예정두수', type: 'number' },
         { key: 'perHead', label: '두당금액', type: 'number' },
         { key: 'settleMonth', label: '정산예정월', type: 'text' },
-        { key: 'settled', label: '정산완료여부', type: 'text' },
+        { key: 'settled', label: '정산완료여부', type: 'checkbox' },
         { key: 'note', label: '특이사항', type: 'text' }
       ]
     }
@@ -742,7 +723,7 @@ try {
   function blankStatusRow(tabKey) {
     var row = {};
     STATUS_TABLE_DEFS[tabKey].columns.forEach(function (c) {
-      row[c.key] = (c.type === 'number' || c.type === 'percent') ? 0 : '';
+      row[c.key] = (c.type === 'number' || c.type === 'percent') ? 0 : (c.type === 'checkbox' ? false : '');
     });
     return row;
   }
@@ -785,7 +766,7 @@ try {
   function renderStatusTable(tabKey, rows) {
     var def = STATUS_TABLE_DEFS[tabKey];
     var headHtml = def.columns.map(function (c) {
-      return '<th' + (c.type === 'text' || c.type === 'date' ? ' class="left"' : '') + '>' + c.label + '</th>';
+      return '<th' + (c.type === 'text' || c.type === 'date' || c.type === 'checkbox' ? ' class="left"' : '') + '>' + c.label + '</th>';
     }).join('');
     var bodyRowsHtml = rows.map(function (row) {
       var cells = def.columns.map(function (c) {
@@ -793,8 +774,9 @@ try {
         var display;
         if (c.type === 'number') display = formatNumberCell(v, c.decimals);
         else if (c.type === 'percent') display = formatNumberCell((Number(v) || 0) * 100, 1) + '%';
+        else if (c.type === 'checkbox') display = v ? '✓' : '';
         else display = (v === undefined || v === null) ? '' : v;
-        var isLeft = (c.type === 'text' || c.type === 'date');
+        var isLeft = (c.type === 'text' || c.type === 'date' || c.type === 'checkbox');
         return '<td' + (isLeft ? ' class="left"' : ' class="mono"') + '>' + display + '</td>';
       }).join('');
       return '<tr>' + cells + '</tr>';
@@ -823,10 +805,13 @@ try {
     var def = STATUS_TABLE_DEFS[tabKey];
     var rows = statusRowsOf(tabKey);
     var headHtml = def.columns.map(function (c) {
-      return '<th' + (c.type === 'text' || c.type === 'date' ? ' class="left"' : '') + '>' + c.label + '</th>';
+      return '<th' + (c.type === 'text' || c.type === 'date' || c.type === 'checkbox' ? ' class="left"' : '') + '>' + c.label + '</th>';
     }).join('') + '<th></th>';
     var bodyRowsHtml = rows.map(function (row, idx) {
       var cells = def.columns.map(function (c) {
+        if (c.type === 'checkbox') {
+          return '<td class="left"><input type="checkbox" data-action="setStatusCell" data-tab="' + tabKey + '" data-row="' + idx + '" data-field="' + c.key + '" data-type="checkbox"' + (row[c.key] ? ' checked' : '') + '></td>';
+        }
         var val = statusCellDisplayValue(row, c);
         var inputType = c.type === 'date' ? 'date' : (c.type === 'text' ? 'text' : 'number');
         var isLeft = (c.type === 'text' || c.type === 'date');
@@ -1385,12 +1370,10 @@ try {
       catch (e) { /* fall through to share/download below */ }
     }
 
-    var file = null;
-    try { file = new File([blob], filename, { type: blob.type }); } catch (e) {}
-    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file] }).catch(function () {});
-      return;
-    }
+    // A direct <a download> click is the most reliable path across browsers — Web Share
+    // was tried here before, but navigator.share() can lose the click's user-activation
+    // after the awaits above and then reject with no visible fallback, so the button
+    // would look completely unresponsive. Always fall back to a plain download instead.
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -1566,6 +1549,7 @@ try {
       out.push(def.columns.map(function (c) {
         var v = r[c.key];
         if (c.type === 'percent') return (v === undefined || v === null || v === '') ? '' : Math.round(Number(v) * 1000) / 10;
+        if (c.type === 'checkbox') return v ? '완료' : '';
         return (v === undefined || v === null) ? '' : v;
       }));
     });
@@ -1592,9 +1576,13 @@ try {
   }
 
   async function exportStatusWorkbook() {
-    var blob = buildExportWorkbookBlob();
-    var filename = '후기자돈사_운영현황_' + toISO(todayMs()) + '.xlsx';
-    await saveGeneratedFile(blob, filename);
+    try {
+      var blob = buildExportWorkbookBlob();
+      var filename = '후기자돈사_운영현황_' + toISO(todayMs()) + '.xlsx';
+      await saveGeneratedFile(blob, filename);
+    } catch (e) {
+      alert('엑셀 다운로드에 실패했습니다: ' + (e && e.message ? e.message : e));
+    }
   }
 
   // ---------- excel/csv import (pure browser APIs, no external libraries) ----------
@@ -1956,7 +1944,7 @@ try {
         settleHead: Number(row[31]) || 0,
         perHead: Math.round(Number(row[32]) || 0),
         settleMonth: row[33] != null ? String(row[33]).trim() : '',
-        settled: row[34] != null ? String(row[34]).trim() : '',
+        settled: !!(row[34] != null && String(row[34]).trim()),
         note: row[35] != null ? String(row[35]).trim() : ''
       });
     }
@@ -2151,6 +2139,7 @@ try {
       var row = Object.assign({}, stRows[stRow]);
       if (stType === 'number') row[stField] = Number(t.value) || 0;
       else if (stType === 'percent') row[stField] = (Number(t.value) || 0) / 100;
+      else if (stType === 'checkbox') row[stField] = t.checked;
       else row[stField] = t.value;
       stRows[stRow] = row;
       saveStatusRows(stTab, stRows);
