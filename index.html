@@ -689,7 +689,7 @@ try {
         { key: 'initIn', label: '최초 전입(두)', type: 'number', unit: 'head' },
         { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg', weightBasis: 'netIn' },
         { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
-        { key: 'directSale', label: '외판(두)', type: 'number', unit: 'head' },
+        { key: 'directSale', label: '외부판매(두)', type: 'number', unit: 'head' },
         { key: 'netIn', label: '실 전입(두)', type: 'number', unit: 'head' },
         { key: 'death', label: '폐사(두)', type: 'number', unit: 'head' },
         { key: 'shipped', label: '분양(두)', type: 'number', unit: 'head' },
@@ -936,8 +936,8 @@ try {
       '<div class="import-box">' +
         '<div class="row">' +
           '<button type="button" class="btn ghost small" data-action="triggerWorkbookImport">엑셀 업로드</button>' +
-          '<input type="file" id="workbookFileInput" accept=".xlsx" style="display:none">' +
-          '<span class="hint" style="margin:0">전체농장 전입현황 엑셀(‘농장전체전입현황’, ‘월대사육비’ 시트 포함)을 그대로 올리면 자동으로 반영됩니다.</span>' +
+          '<input type="file" id="workbookFileInput" accept=".xlsx,.xls" multiple style="display:none">' +
+          '<span class="hint" style="margin:0">전체농장 전입현황 엑셀(‘농장전체전입현황’, ‘월대사육비’, ‘농장별 돈수불’ 시트 포함)을 그대로 올리면 자동으로 반영됩니다. 시트별로 파일이 나뉘어 있어도 여러 개를 한 번에 선택하면 합쳐서 읽습니다.</span>' +
         '</div>' +
         (workbookImportBusy ? '<p class="hint" style="margin:8px 0 0">읽는 중…</p>' : '') +
         (workbookImportError ? '<p class="hint" style="margin:8px 0 0;color:var(--danger)">' + workbookImportError + '</p>' : '') +
@@ -2481,6 +2481,86 @@ try {
   }
   function excelSerialToISO(serial) { return toISO(excelSerialToMs(serial)); }
 
+  // 일부 사내 시스템은 ".xls" 확장자로 내보내지만 실제로는 HTML 표(<table>)를 담고 있다.
+  // 진짜 xlsx(zip)인지 여부는 파일 시그니처("PK")로 판별한다.
+  function isZipBuffer(buf) {
+    return buf.length >= 2 && buf[0] === 0x50 && buf[1] === 0x4B;
+  }
+  // HTML로 내보낸 "농장별 돈수불" 같은 표를, 첫 <th> 행을 헤더로 삼아 {헤더명: 값} 객체 배열로 변환한다.
+  function parseHtmlTableSheet(text) {
+    var doc = new DOMParser().parseFromString(text, 'text/html');
+    var table = doc.querySelector('table');
+    if (!table) return null;
+    var trs = table.querySelectorAll('tr');
+    var headers = null, headerIdx = -1;
+    for (var i = 0; i < trs.length; i++) {
+      var ths = trs[i].querySelectorAll('th');
+      if (ths.length) {
+        headers = Array.prototype.map.call(ths, function (th) { return th.textContent.trim(); });
+        headerIdx = i;
+        break;
+      }
+    }
+    if (headerIdx === -1) return null;
+    var rows = [];
+    for (var j = headerIdx + 1; j < trs.length; j++) {
+      var tds = trs[j].querySelectorAll('td');
+      if (!tds.length) continue;
+      var obj = {};
+      for (var k = 0; k < headers.length && k < tds.length; k++) {
+        if (headers[k]) obj[headers[k]] = tds[k].textContent.trim();
+      }
+      rows.push(obj);
+    }
+    return { headers: headers, rows: rows };
+  }
+  // 실제 xlsx 시트(행 배열)에서 requiredHeaders를 모두 포함하는 헤더 행을 찾아,
+  // 이후 행들을 {헤더명: 값} 객체 배열로 변환한다. 헤더가 정확히 몇 번째 줄인지 몰라도 동작한다.
+  function rowsToObjectsByHeader(rows, requiredHeaders) {
+    var headerRowIdx = -1, headers = null;
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (!row) continue;
+      var found = requiredHeaders.every(function (h) {
+        return row.some(function (cell) { return String(cell || '').trim() === h; });
+      });
+      if (found) { headerRowIdx = i; headers = row; break; }
+    }
+    if (headerRowIdx === -1) return null;
+    var out = [];
+    for (var r = headerRowIdx + 1; r < rows.length; r++) {
+      var dataRow = rows[r];
+      if (!dataRow) continue;
+      var obj = {}, any = false;
+      for (var h = 0; h < headers.length; h++) {
+        var key = String(headers[h] || '').trim();
+        if (!key) continue;
+        var v = dataRow[h];
+        obj[key] = (v === undefined || v === null) ? '' : v;
+        if (obj[key] !== '') any = true;
+      }
+      if (any) out.push(obj);
+    }
+    return out;
+  }
+  // "농장별 돈수불" 표에서 자돈_루카의 그룹별 판매두수(외부판매)를 합산한다.
+  // 그룹명은 "농장명-그룹명(차수)" 형태로 두 번 반복되어 있어, 앞의 "농장명-" 접두사를 제거해야
+  // 농장전체전입현황의 그룹명(차수) 기준(groupBaseName)과 동일한 키로 매칭된다.
+  function parseDonsubulRows(rowObjects) {
+    var out = {};
+    (rowObjects || []).forEach(function (r) {
+      var farmName = String(r['농장명'] || '').trim();
+      if (farmName !== '자돈_루카') return;
+      var rawGroup = String(r['그룹명'] || '').trim();
+      var prefix = farmName + '-';
+      var groupKey = rawGroup.indexOf(prefix) === 0 ? rawGroup.slice(prefix.length) : rawGroup;
+      if (!groupKey) return;
+      var sold = Number(String(r['판매두수'] || '').replace(/,/g, '')) || 0;
+      out[groupKey] = (out[groupKey] || 0) + sold;
+    });
+    return out;
+  }
+
   function parseFarmwideSheetRows(rows) {
     // 농장전체전입현황: 헤더 4행, 데이터는 5행부터. D=농장명, G=그룹명(차수), H=분양농장(상대 농장),
     // I=전입일, J=실두수, K=총체중, N=클레임두수, P=폐사(당기간), R=전출,판매(당기간)
@@ -2505,7 +2585,7 @@ try {
     return out;
   }
 
-  function buildLukaStatusFromFarmwide(parsed) {
+  function buildLukaStatusFromFarmwide(parsed, donsubulMap) {
     var groups = {}, order = [];
     parsed.filter(function (r) { return r.farmName === '자돈_루카'; }).forEach(function (r) {
       var base = groupBaseName(r.groupCode);
@@ -2517,11 +2597,12 @@ try {
     return order.map(function (base) {
       var g = groups[base];
       return {
+        groupKey: base,
         date: excelSerialToISO(g.inDateSerial),
         initIn: g.headIn + g.claimHead,
         avgWeight: g.headIn ? Math.round((g.totalWeight / g.headIn) * 10) / 10 : 0,
         claim: g.claimHead,
-        directSale: 0,
+        directSale: (donsubulMap && donsubulMap[base]) || 0,
         netIn: g.headIn,
         death: g.deathPeriod,
         shipped: g.shipPeriod,
@@ -2587,30 +2668,71 @@ try {
     return out;
   }
 
-  async function importFarmwideWorkbook(file) {
+  var DONSUBUL_HEADERS = ['농장명', '그룹명', '판매두수'];
+
+  // 파일 하나에서 찾을 수 있는 시트를 최대한 읽어온다. 진짜 xlsx(zip)면 알려진 시트 이름들을
+  // 각각 찾아보고, HTML로 내보낸 표(.xls 확장자를 쓰는 "농장별 돈수불" 등)면 표를 그대로 읽는다.
+  async function readFarmwideFile(file) {
     var buf = new Uint8Array(await file.arrayBuffer());
-    var entries = parseZipEntries(buf);
-    var sharedStrings = [];
-    if (entries['xl/sharedStrings.xml']) {
-      var ssBytes = await extractZipEntry(buf, entries['xl/sharedStrings.xml']);
-      sharedStrings = parseSharedStrings(new TextDecoder('utf-8').decode(ssBytes));
+    var out = { farmwideRows: null, feedCostSheetRows: null, donsubulObjects: null };
+    if (isZipBuffer(buf)) {
+      var entries = parseZipEntries(buf);
+      var sharedStrings = [];
+      if (entries['xl/sharedStrings.xml']) {
+        var ssBytes = await extractZipEntry(buf, entries['xl/sharedStrings.xml']);
+        sharedStrings = parseSharedStrings(new TextDecoder('utf-8').decode(ssBytes));
+      }
+      var readSheet = async function (name) {
+        var path = await resolveSheetPath(buf, entries, name);
+        if (!path || !entries[path]) return null;
+        var bytes = await extractZipEntry(buf, entries[path]);
+        return parseSheetRows(new TextDecoder('utf-8').decode(bytes), sharedStrings);
+      };
+      out.farmwideRows = await readSheet('농장전체전입현황');
+      out.feedCostSheetRows = await readSheet('월대사육비');
+      var donsubulSheetRows = await readSheet('농장별 돈수불');
+      if (donsubulSheetRows) out.donsubulObjects = rowsToObjectsByHeader(donsubulSheetRows, DONSUBUL_HEADERS);
+    } else {
+      var text = new TextDecoder('utf-8').decode(buf);
+      var htmlParsed = parseHtmlTableSheet(text);
+      if (htmlParsed && DONSUBUL_HEADERS.every(function (h) { return htmlParsed.headers.indexOf(h) !== -1; })) {
+        out.donsubulObjects = htmlParsed.rows;
+      }
     }
-    async function readSheet(name) {
-      var path = await resolveSheetPath(buf, entries, name);
-      if (!path || !entries[path]) return null;
-      var bytes = await extractZipEntry(buf, entries[path]);
-      return parseSheetRows(new TextDecoder('utf-8').decode(bytes), sharedStrings);
+    return out;
+  }
+
+  // 여러 파일을 한 번에 올려도(농장전체전입현황/월대사육비/농장별 돈수불이 각각 다른 파일이어도)
+  // 파일마다 찾은 시트를 합쳐서 하나의 결과로 만든다.
+  async function importFarmwideFiles(files) {
+    var farmwideRows = null, feedCostSheetRows = null, donsubulObjects = null;
+    for (var i = 0; i < files.length; i++) {
+      var found = await readFarmwideFile(files[i]);
+      if (found.farmwideRows) farmwideRows = found.farmwideRows;
+      if (found.feedCostSheetRows) feedCostSheetRows = found.feedCostSheetRows;
+      if (found.donsubulObjects) donsubulObjects = found.donsubulObjects;
     }
-    var farmwideRows = await readSheet('농장전체전입현황');
-    var feedCostSheetRows = await readSheet('월대사육비');
-    if (!farmwideRows && !feedCostSheetRows) {
-      throw new Error('이 파일에서 "농장전체전입현황" 또는 "월대사육비" 시트를 찾을 수 없습니다.');
+    if (!farmwideRows && !feedCostSheetRows && !donsubulObjects) {
+      throw new Error('업로드한 파일에서 "농장전체전입현황", "월대사육비", "농장별 돈수불" 시트를 찾을 수 없습니다.');
     }
+    var donsubulMap = donsubulObjects ? parseDonsubulRows(donsubulObjects) : null;
     var result = {};
     if (farmwideRows) {
       var parsed = parseFarmwideSheetRows(farmwideRows);
-      result.lukaStatusRows = buildLukaStatusFromFarmwide(parsed);
+      result.lukaStatusRows = buildLukaStatusFromFarmwide(parsed, donsubulMap);
       result.reshipRows = buildReshipFromFarmwide(parsed);
+    } else if (donsubulMap) {
+      // 농장전체전입현황 없이 돈수불 파일만 올린 경우, 이미 저장된 후기자돈현황 행에
+      // (이전에 인식해 둔) 그룹키가 있으면 그 행의 외부판매 두수만 갱신한다.
+      var existingLuka = statusRowsOf('lukaStatus');
+      if (existingLuka.length) {
+        result.lukaStatusRows = existingLuka.map(function (r) {
+          if (r.groupKey && donsubulMap[r.groupKey] !== undefined) {
+            return Object.assign({}, r, { directSale: donsubulMap[r.groupKey] });
+          }
+          return r;
+        });
+      }
     }
     if (feedCostSheetRows) {
       result.feedCostRows = parseFeedCostSheetRows(feedCostSheetRows);
@@ -2618,14 +2740,14 @@ try {
     return result;
   }
 
-  async function handleWorkbookImportFile(file) {
-    if (!file) return;
+  async function handleWorkbookImportFile(files) {
+    if (!files || !files.length) return;
     workbookImportError = null;
     workbookImportBusy = true;
     pendingWorkbookImport = null;
     render();
     try {
-      pendingWorkbookImport = await importFarmwideWorkbook(file);
+      pendingWorkbookImport = await importFarmwideFiles(files);
       workbookImportBusy = false;
     } catch (err) {
       workbookImportBusy = false;
@@ -2751,7 +2873,10 @@ try {
       return;
     }
     if (t.id === 'workbookFileInput') {
-      handleWorkbookImportFile(t.files && t.files[0]);
+      // t.files is a live FileList that some browsers clear in place once t.value is
+      // reset below, even though the reference was already handed to the async import —
+      // copy it to a plain array first so the in-flight read isn't emptied out from under it.
+      handleWorkbookImportFile(Array.from(t.files || []));
       t.value = '';
       return;
     }
