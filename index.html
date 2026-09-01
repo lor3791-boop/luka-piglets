@@ -452,6 +452,10 @@ try {
   var activeTab = 'lukaStatus';
   var calMonthCursor = (function () { var t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
   var calendarCopyState = null;
+  // 전입전출 계산기 — 화면에서만 확인하는 임시 계산값, 저장되지 않는다.
+  var calcDate = toISO(todayMs());
+  var calcInHead = 0;
+  var calcOutHead = 0;
   var confirmingDeleteId = null;
   var pendingImport = null;
   var importBusy = false;
@@ -1220,6 +1224,29 @@ try {
     '</div>';
   }
 
+  function renderTransferCalculator() {
+    var baseStock = stockAsOf(parseISO(calcDate));
+    var inH = Number(calcInHead) || 0;
+    var outH = Number(calcOutHead) || 0;
+    var resultStock = baseStock + inH - outH;
+    var resultTone = resultStock < 0 ? ' tone-danger' : ' tone-accent';
+    return '' +
+      '<section class="panel">' +
+        '<h2>전입전출 계산기</h2>' +
+        '<p class="hint">전입전출 계획표에 반영된 재고를 기준으로, 입력한 전입·전출 두수를 더하고 뺀 예상 재고를 계산합니다. 이 값은 저장되지 않고 화면에서만 확인할 수 있습니다.</p>' +
+        '<div class="field-row">' +
+          '<div class="field date"><label>날짜</label><input type="date" value="' + calcDate + '" data-action="setCalcDate"></div>' +
+          '<div class="field num"><label>전입두수</label><input type="number" min="0" value="' + calcInHead + '" data-action="setCalcIn"></div>' +
+          '<div class="field num"><label>전출두수</label><input type="number" min="0" value="' + calcOutHead + '" data-action="setCalcOut"></div>' +
+          '<button type="button" class="btn ghost small" data-action="resetCalc">초기화</button>' +
+        '</div>' +
+        '<div class="stat-row" style="margin-top:14px">' +
+          '<div class="card"><span class="label">' + weekOf(parseISO(calcDate)).label + ' · ' + fmtShort(parseISO(calcDate)) + ' 계획표 기준 재고</span><span class="value mono">' + fmtNum(baseStock) + '두</span></div>' +
+          '<div class="card' + resultTone + '"><span class="label">전입 ' + fmtNum(inH) + '두 · 전출 ' + fmtNum(outH) + '두 반영 후</span><span class="value mono">' + fmtNum(resultStock) + '두</span></div>' +
+        '</div>' +
+      '</section>';
+  }
+
   function renderCalendar() {
     var y = calMonthCursor.y, m = calMonthCursor.m;
     var firstOfMonth = Date.UTC(y, m, 1);
@@ -1274,7 +1301,8 @@ try {
           '<span class="sw"><span class="dot2" style="background:var(--out-farm)"></span>전출</span>' +
           '<span class="sw"><span class="dot2" style="background:var(--out-ext)"></span>외부판매</span>' +
         '</div>' +
-      '</section>';
+      '</section>' +
+      renderTransferCalculator();
   }
 
   function roundRectPath(ctx, x, y, w, h, r) {
@@ -2822,6 +2850,7 @@ try {
     else if (action === 'calPrev') { calMonthCursor.m--; if (calMonthCursor.m < 0) { calMonthCursor.m = 11; calMonthCursor.y--; } render(); }
     else if (action === 'calNext') { calMonthCursor.m++; if (calMonthCursor.m > 11) { calMonthCursor.m = 0; calMonthCursor.y++; } render(); }
     else if (action === 'calToday') { var t = new Date(); calMonthCursor = { y: t.getFullYear(), m: t.getMonth() }; render(); }
+    else if (action === 'resetCalc') { calcDate = toISO(todayMs()); calcInHead = 0; calcOutHead = 0; render(); }
     else if (action === 'copyCalendar') {
       var blobPromise = calendarImageBlobPromise();
       var markState = function (state) {
@@ -2894,6 +2923,9 @@ try {
     else if (action === 'setLukaStatusMonthFilter') { lukaStatusFilterMonth = t.value; render(); }
     else if (action === 'setReshipMonthFilter') { reshipFilterMonth = t.value; render(); }
     else if (action === 'setReshipFarmFilter') { reshipFilterFarm = t.value; render(); }
+    else if (action === 'setCalcDate') { calcDate = t.value || toISO(todayMs()); render(); }
+    else if (action === 'setCalcIn') { calcInHead = Number(t.value) || 0; render(); }
+    else if (action === 'setCalcOut') { calcOutHead = Number(t.value) || 0; render(); }
     else if (action === 'setStatusCell') {
       var stTab = t.dataset.tab, stRow = Number(t.dataset.row), stField = t.dataset.field, stType = t.dataset.type;
       var stRows = statusRowsOf(stTab).slice();
