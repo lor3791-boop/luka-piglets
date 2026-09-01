@@ -269,9 +269,67 @@
   }
   .modal-panel h3 { font-size: 16px; font-weight: 700; }
 
+  .toggle-sw {
+    position: relative; width: 40px; height: 22px; border-radius: var(--radius-full);
+    border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; padding: 0; flex: none;
+    transition: background .15s, border-color .15s;
+  }
+  .toggle-sw::after {
+    content: ''; position: absolute; top: 1px; left: 1px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px var(--shadow); transition: left .15s;
+  }
+  .toggle-sw.on { background: var(--success); border-color: var(--success); }
+  .toggle-sw.on::after { left: 19px; }
+
+  /* editable status card layout (수정/추가 팝업) */
+  .edit-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .edit-cards { display: flex; flex-direction: column; gap: 10px; max-height: 64vh; overflow-y: auto; padding-right: 2px; }
+  .edit-card { border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; background: var(--surface); }
+  .edit-card .ef-check { padding-top: 6px; }
+  .ef-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px 10px; min-width: 0; }
+  .ef-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .ef-item.locked .ef-value { color: var(--text-muted); }
+  .ef-label { font-size: 10.5px; color: var(--text-faint); font-weight: 600; white-space: nowrap; }
+  .ef-value { font-size: 13px; font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ef-item input.cell-input { border: 1px solid var(--border); background: var(--field); border-radius: 6px; padding: 5px 7px; text-align: left; font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+
+  /* 전입전출 시뮬레이션 캘린더 */
+  .sim-toolbar { margin-bottom: 12px; }
+  .sim-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .sim-chip { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-2); border-radius: var(--radius-full); padding: 2px; }
+  .sim-chip.active { outline: 2px solid var(--accent); }
+  .sim-chip-name { border: none; background: transparent; color: var(--text); font-weight: 600; font-size: 12.5px; padding: 5px 10px; border-radius: var(--radius-full); cursor: pointer; }
+  .sim-chip-name:hover { background: var(--surface); }
+  .sim-chip-del { border: none; background: transparent; color: var(--text-faint); width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 14px; line-height: 1; }
+  .sim-chip-del:hover { background: var(--danger-soft); color: var(--danger); }
+
+  .cal-day[data-action] { cursor: pointer; }
+  .cal-day[data-action]:hover { background: var(--surface-2); }
+  .cal-day.outside[data-action]:hover { background: var(--bg); }
+  .cal-day.sim-edited { box-shadow: inset 0 0 0 2px var(--accent-strong); }
+
   footer.note { font-size: 12px; color: var(--text-faint); text-align: center; padding: 20px 0 4px; }
 
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  @media (max-width: 640px) {
+    #app { padding: 0 10px 32px; }
+    .brand h1 { font-size: 17px; }
+    section.panel { padding: 14px 14px; }
+    .cards, .stat-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .card { padding: 12px 13px; }
+    .card .value { font-size: 19px; }
+    th, td { padding: 6px 7px; font-size: 12px; }
+    .cal-grid { grid-template-columns: repeat(7, minmax(42px, 1fr)); min-width: 0; }
+    .cal-scroll { overflow-x: visible; }
+    .cal-day { min-height: 58px; padding: 3px 3px; gap: 1px; }
+    .cal-chip { font-size: 8.5px; padding: 0 2px; }
+    .cal-chip .fname { display: none; }
+    .cal-stock { font-size: 8px; }
+    .modal-panel { padding: 16px 14px; max-height: 92vh; }
+    .field.date input, .field.num input { width: 100%; }
+    .ef-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); }
+  }
 </style>
 </head>
 <body>
@@ -452,10 +510,14 @@ try {
   var activeTab = 'lukaStatus';
   var calMonthCursor = (function () { var t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
   var calendarCopyState = null;
-  // 전입전출 계산기 — 화면에서만 확인하는 임시 계산값, 저장되지 않는다.
-  var calcDate = toISO(todayMs());
-  var calcInHead = 0;
-  var calcOutHead = 0;
+  var calDayEditISO = null;
+  // 전입전출 시뮬레이션 — 화면에서만 확인하는 가안 상태. simOverrides/simActiveScenarioId/simSaveNameDraft는
+  // 저장 버튼을 눌러야만 settings.simScenarios(최대 3개)에 반영된다.
+  var simMonthCursor = (function () { var t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; })();
+  var simOverrides = {};
+  var simActiveScenarioId = null;
+  var simDayEditISO = null;
+  var simSaveNameDraft = '';
   var confirmingDeleteId = null;
   var pendingImport = null;
   var importBusy = false;
@@ -473,6 +535,10 @@ try {
   var lukaStatusFilterMonth = toISO(todayMs()).slice(0, 7);
   var reshipFilterMonth = toISO(todayMs()).slice(0, 7);
   var reshipFilterFarm = '';
+  // 수정/추가 팝업의 일괄삭제(체크박스) 모드 — 탭별로 독립.
+  var statusBulkMode = {};
+  var statusBulkChecked = {};
+  var statusBulkConfirming = {};
 
   function defaultSettings() {
     return {
@@ -480,7 +546,8 @@ try {
       weeklyDeaths: {},
       lukaStatusRows: [],
       reshipRows: [],
-      feedCostRows: []
+      feedCostRows: [],
+      simScenarios: []
     };
   }
 
@@ -592,12 +659,31 @@ try {
     return (v === undefined || v === null || v === '') ? settings.defaultWeeklyDeath : Number(v);
   }
 
-  function buildLedger(maxMs) {
-    // actual transactions
-    var events = records.map(function (r) {
+  function buildLedger(maxMs, overrides) {
+    // actual transactions — dates present in `overrides` are replaced by the override's
+    // in/out_farm/out_external triple instead of the real records on that date, so the
+    // 시뮬레이션 캘린더 can preview "what if" numbers without touching real data.
+    var overrideSet = null;
+    if (overrides) {
+      overrideSet = {};
+      Object.keys(overrides).forEach(function (iso) { overrideSet[parseISO(iso)] = true; });
+    }
+    var events = records.filter(function (r) {
+      return !overrideSet || !overrideSet[parseISO(r.date)];
+    }).map(function (r) {
       var delta = r.type === 'in' ? Number(r.head) : -Number(r.head);
       return { date: parseISO(r.date), delta: delta, kind: 'tx', ref: r };
     });
+    if (overrides) {
+      Object.keys(overrides).forEach(function (iso) {
+        var o = overrides[iso] || {};
+        var dms = parseISO(iso);
+        var inH = Number(o.in) || 0, outFarm = Number(o.out_farm) || 0, outExt = Number(o.out_external) || 0;
+        if (inH) events.push({ date: dms, delta: inH, kind: 'tx' });
+        if (outFarm) events.push({ date: dms, delta: -outFarm, kind: 'tx' });
+        if (outExt) events.push({ date: dms, delta: -outExt, kind: 'tx' });
+      });
+    }
     // synthetic weekly death deductions, from base week through maxMs's week
     var baseMs = parseISO(BASE_DATE_ISO);
     var startIdx = weekIndexOf(baseMs);
@@ -616,10 +702,10 @@ try {
     return events;
   }
 
-  function stockAsOf(queryMs) {
+  function stockAsOf(queryMs, overrides) {
     var baseMs = parseISO(BASE_DATE_ISO);
     var horizon = Math.max(queryMs, baseMs, todayMs() + 60 * DAY_MS);
-    var ledger = buildLedger(horizon);
+    var ledger = buildLedger(horizon, overrides);
     var stock = BASE_STOCK;
     if (queryMs >= baseMs) {
       for (var i = 0; i < ledger.length; i++) {
@@ -632,6 +718,24 @@ try {
     }
     return stock;
   }
+
+  // ---------- 전입전출 시뮬레이션 헬퍼 ----------
+  function aggregateRecordsForDay(dms) {
+    var agg = { in: 0, out_farm: 0, out_external: 0 };
+    records.forEach(function (r) {
+      if (parseISO(r.date) !== dms) return;
+      if (r.type === 'in') agg.in += Number(r.head) || 0;
+      else if (r.subtype === 'farm') agg.out_farm += Number(r.head) || 0;
+      else agg.out_external += Number(r.head) || 0;
+    });
+    return agg;
+  }
+  function simDayValue(iso) {
+    var ov = simOverrides[iso];
+    if (ov) return { in: Number(ov.in) || 0, out_farm: Number(ov.out_farm) || 0, out_external: Number(ov.out_external) || 0 };
+    return aggregateRecordsForDay(parseISO(iso));
+  }
+  function simStockAsOf(queryMs) { return stockAsOf(queryMs, simOverrides); }
 
   function weekAggregate(idx) {
     var wk = computeWeek(idx);
@@ -690,6 +794,7 @@ try {
       dateKey: 'date',
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
+        { key: 'groupKey', label: '그룹명', type: 'text' },
         { key: 'initIn', label: '최초 전입(두)', type: 'number', unit: 'head' },
         { key: 'avgWeight', label: '전입평체(kg)', type: 'number', decimals: 1, unit: 'kg', weightBasis: 'netIn' },
         { key: 'claim', label: '크레임(두)', type: 'number', unit: 'head' },
@@ -699,7 +804,8 @@ try {
         { key: 'shipped', label: '분양(두)', type: 'number', unit: 'head' },
         { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
         { key: 'survivalRate', label: '육성율', type: 'percent', survivalBasis: 'netIn' },
-        { key: 'note', label: '비고', type: 'text' }
+        { key: 'note', label: '비고', type: 'text' },
+        { key: 'settled', label: '정산여부', type: 'checkbox', switchUi: true }
       ]
     },
     reship: {
@@ -708,6 +814,7 @@ try {
       dateKey: 'date',
       columns: [
         { key: 'date', label: '날짜', type: 'date' },
+        { key: 'groupKey', label: '그룹명', type: 'text' },
         { key: 'week', label: '전입주차', type: 'number', suffix: '주차', unit: 'week' },
         { key: 'farm', label: '분양농장', type: 'text' },
         { key: 'in', label: '전입(두)', type: 'number', unit: 'head' },
@@ -718,7 +825,8 @@ try {
         { key: 'shipped', label: '출하(두)', type: 'number', unit: 'head' },
         { key: 'stock', label: '현재고(두)', type: 'number', unit: 'head' },
         { key: 'survivalRate', label: '육성율', type: 'percent', survivalBasis: 'in' },
-        { key: 'note', label: '비고', type: 'text' }
+        { key: 'note', label: '비고', type: 'text' },
+        { key: 'settled', label: '정산여부', type: 'checkbox', switchUi: true }
       ]
     },
     feedCost: {
@@ -739,11 +847,31 @@ try {
     }
   };
 
+  // 수정/추가 팝업에서 실수로 수치를 건드려 데이터가 틀어지지 않도록, 엑셀 업로드로 채워지는
+  // "사실" 값(날짜/그룹명/전입두수/평체 등)은 잠그고 이후 실제로 바뀌는 값만 편집 가능하게 한다.
+  // feedCost는 여기 없으면 기존처럼 전체 편집 가능.
+  var STATUS_EDITABLE_FIELDS = {
+    lukaStatus: ['directSale', 'death', 'shipped'],
+    reship: ['death', 'shipped']
+  };
+
   function blankStatusRow(tabKey) {
     var row = {};
     STATUS_TABLE_DEFS[tabKey].columns.forEach(function (c) {
       row[c.key] = (c.type === 'number' || c.type === 'percent') ? 0 : (c.type === 'checkbox' ? false : '');
     });
+    return row;
+  }
+  function recomputeStatusRow(tabKey, row) {
+    if (tabKey === 'lukaStatus') {
+      var netIn = Number(row.netIn) || 0, death = Number(row.death) || 0, shipped = Number(row.shipped) || 0;
+      row.stock = Math.max(0, netIn - death - shipped);
+      row.survivalRate = netIn ? (netIn - death) / netIn : 0;
+    } else if (tabKey === 'reship') {
+      var inH = Number(row.in) || 0, claim = Number(row.claim) || 0, death2 = Number(row.death) || 0, shipped2 = Number(row.shipped) || 0;
+      row.stock = Math.max(0, (inH - claim) - death2 - shipped2);
+      row.survivalRate = inH ? (inH - death2) / inH : 0;
+    }
     return row;
   }
   function statusRowsOf(tabKey) { return settings[STATUS_TABLE_DEFS[tabKey].settingsKey] || []; }
@@ -807,12 +935,17 @@ try {
   }
   function renderStatusTable(tabKey, rows) {
     var def = STATUS_TABLE_DEFS[tabKey];
+    var fullRows = statusRowsOf(tabKey);
     var headHtml = def.columns.map(function (c) {
       return '<th' + (c.type === 'text' || c.type === 'date' || c.type === 'checkbox' ? ' class="left"' : '') + '>' + c.label + '</th>';
     }).join('');
     var bodyRowsHtml = rows.map(function (row) {
       var cells = def.columns.map(function (c) {
         var v = row[c.key];
+        if (c.type === 'checkbox' && c.switchUi) {
+          var trueIdx = fullRows.indexOf(row);
+          return '<td class="left"><button type="button" class="toggle-sw' + (v ? ' on' : '') + '" data-action="toggleSwitchField" data-tab="' + tabKey + '" data-row="' + trueIdx + '" data-field="' + c.key + '" aria-label="' + c.label + '"></button></td>';
+        }
         var display;
         if (c.type === 'number') display = formatNumberCell(v, c.decimals) + (c.suffix || '');
         else if (c.type === 'percent') display = formatNumberCell((Number(v) || 0) * 100, 1) + '%';
@@ -850,7 +983,8 @@ try {
   }
 
   // ---------- 수정 가능한 표 (수정/추가 팝업) ----------
-  function renderEditableStatusTable(tabKey) {
+  // feedCost처럼 STATUS_EDITABLE_FIELDS에 없는 탭은 기존처럼 모든 칸을 편집 가능한 표로 보여준다.
+  function renderEditableStatusTableLegacy(tabKey) {
     var def = STATUS_TABLE_DEFS[tabKey];
     var rows = statusRowsOf(tabKey);
     var headHtml = def.columns.map(function (c) {
@@ -875,6 +1009,66 @@ try {
       (bodyRowsHtml || '<tr><td colspan="' + (def.columns.length + 1) + '" class="empty">등록된 내역이 없습니다. 엑셀을 업로드하거나 행을 추가하세요.</td></tr>') +
       '</tbody></table></div>' +
       '<div style="margin-top:10px"><button type="button" class="btn ghost small" data-action="addStatusRow" data-tab="' + tabKey + '">+ 행 추가</button></div>';
+  }
+  // lukaStatus/reship: 카드형 레이아웃 — 표를 가로로 늘어놓지 않아 스크롤 없이 한 화면에 들어오고,
+  // 외부판매·폐사·분양(또는 출하)만 입력칸으로 열어 실수로 다른 값을 건드리는 걸 막는다.
+  function renderEditableStatusTable(tabKey) {
+    var editableKeys = STATUS_EDITABLE_FIELDS[tabKey];
+    if (!editableKeys) return renderEditableStatusTableLegacy(tabKey);
+    var def = STATUS_TABLE_DEFS[tabKey];
+    var rows = statusRowsOf(tabKey);
+    var bulkMode = !!statusBulkMode[tabKey];
+    var checkedSet = statusBulkChecked[tabKey] || {};
+    var confirming = !!statusBulkConfirming[tabKey];
+    var checkedCount = Object.keys(checkedSet).filter(function (k) { return checkedSet[k]; }).length;
+
+    var cardsHtml = rows.map(function (row, idx) {
+      var fieldsHtml = def.columns.map(function (c) {
+        if (c.type === 'checkbox' && c.switchUi) {
+          return '<div class="ef-item"><span class="ef-label">' + c.label + '</span>' +
+            '<button type="button" class="toggle-sw' + (row[c.key] ? ' on' : '') + '" data-action="toggleSwitchField" data-tab="' + tabKey + '" data-row="' + idx + '" data-field="' + c.key + '" aria-label="' + c.label + '"></button></div>';
+        }
+        var editable = editableKeys.indexOf(c.key) !== -1;
+        if (editable) {
+          var val = statusCellDisplayValue(row, c);
+          return '<div class="ef-item"><span class="ef-label">' + c.label + '</span>' +
+            '<input class="cell-input" type="number" min="0"' + (c.type === 'percent' ? ' step="0.1"' : '') +
+            ' value="' + String(val).replace(/"/g, '&quot;') + '" data-action="setStatusCell" data-tab="' + tabKey + '" data-row="' + idx + '" data-field="' + c.key + '" data-type="' + c.type + '"></div>';
+        }
+        var display;
+        var v = row[c.key];
+        if (c.type === 'number') display = formatNumberCell(v, c.decimals) + (c.suffix || '');
+        else if (c.type === 'percent') display = formatNumberCell((Number(v) || 0) * 100, 1) + '%';
+        else if (c.type === 'checkbox') display = v ? '✓' : '-';
+        else display = (v === undefined || v === null || v === '') ? '-' : v;
+        return '<div class="ef-item locked"><span class="ef-label">' + c.label + '</span><span class="ef-value">' + display + '</span></div>';
+      }).join('');
+      var checked = !!checkedSet[idx];
+      return '<div class="edit-card">' +
+        (bulkMode ? '<label class="ef-check"><input type="checkbox" data-action="toggleBulkCheck" data-tab="' + tabKey + '" data-row="' + idx + '"' + (checked ? ' checked' : '') + '></label>' : '') +
+        '<div class="ef-grid">' + fieldsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    var toolbarHtml;
+    if (!bulkMode) {
+      toolbarHtml = '<button type="button" class="btn ghost small" data-action="addStatusRow" data-tab="' + tabKey + '">+ 행 추가</button>' +
+        '<button type="button" class="btn ghost small" data-action="startBulkDelete" data-tab="' + tabKey + '">삭제</button>';
+    } else if (!confirming) {
+      toolbarHtml = '<button type="button" class="btn danger-outline" data-action="requestBulkDelete" data-tab="' + tabKey + '">선택 삭제 (' + checkedCount + ')</button>' +
+        '<button type="button" class="btn ghost small" data-action="cancelBulkDelete" data-tab="' + tabKey + '">취소</button>';
+    } else {
+      toolbarHtml = '<span class="hint" style="margin:0">' + checkedCount + '개 항목을 정말 삭제할까요?</span>' +
+        '<button type="button" class="btn danger-outline" data-action="confirmBulkDelete" data-tab="' + tabKey + '">확인 삭제</button>' +
+        '<button type="button" class="btn ghost small" data-action="cancelBulkDelete" data-tab="' + tabKey + '">취소</button>';
+    }
+    return '' +
+      '<p class="hint" style="margin:0 0 10px">엑셀로 채워진 값은 표시만 되고, ' + editableKeys.map(function (k) {
+        var col = def.columns.filter(function (c) { return c.key === k; })[0];
+        return col ? col.label : k;
+      }).join('·') + '만 직접 수정할 수 있습니다. 현재고·육성율은 자동으로 다시 계산됩니다.</p>' +
+      '<div class="edit-toolbar">' + toolbarHtml + '</div>' +
+      '<div class="edit-cards">' + (cardsHtml || '<p class="empty">등록된 내역이 없습니다. 엑셀을 업로드하거나 행을 추가하세요.</p>') + '</div>';
   }
 
   function renderStatusEditModal() {
@@ -1224,29 +1418,6 @@ try {
     '</div>';
   }
 
-  function renderTransferCalculator() {
-    var baseStock = stockAsOf(parseISO(calcDate));
-    var inH = Number(calcInHead) || 0;
-    var outH = Number(calcOutHead) || 0;
-    var resultStock = baseStock + inH - outH;
-    var resultTone = resultStock < 0 ? ' tone-danger' : ' tone-accent';
-    return '' +
-      '<section class="panel">' +
-        '<h2>전입전출 계산기</h2>' +
-        '<p class="hint">전입전출 계획표에 반영된 재고를 기준으로, 입력한 전입·전출 두수를 더하고 뺀 예상 재고를 계산합니다. 이 값은 저장되지 않고 화면에서만 확인할 수 있습니다.</p>' +
-        '<div class="field-row">' +
-          '<div class="field date"><label>날짜</label><input type="date" value="' + calcDate + '" data-action="setCalcDate"></div>' +
-          '<div class="field num"><label>전입두수</label><input type="number" min="0" value="' + calcInHead + '" data-action="setCalcIn"></div>' +
-          '<div class="field num"><label>전출두수</label><input type="number" min="0" value="' + calcOutHead + '" data-action="setCalcOut"></div>' +
-          '<button type="button" class="btn ghost small" data-action="resetCalc">초기화</button>' +
-        '</div>' +
-        '<div class="stat-row" style="margin-top:14px">' +
-          '<div class="card"><span class="label">' + weekOf(parseISO(calcDate)).label + ' · ' + fmtShort(parseISO(calcDate)) + ' 계획표 기준 재고</span><span class="value mono">' + fmtNum(baseStock) + '두</span></div>' +
-          '<div class="card' + resultTone + '"><span class="label">전입 ' + fmtNum(inH) + '두 · 전출 ' + fmtNum(outH) + '두 반영 후</span><span class="value mono">' + fmtNum(resultStock) + '두</span></div>' +
-        '</div>' +
-      '</section>';
-  }
-
   function renderCalendar() {
     var y = calMonthCursor.y, m = calMonthCursor.m;
     var firstOfMonth = Date.UTC(y, m, 1);
@@ -1268,6 +1439,7 @@ try {
       var wk = computeWeek(idx);
       for (var i = 0; i < 7; i++) {
         var dms = wk.start + i * DAY_MS;
+        var iso = toISO(dms);
         var dDate = new Date(dms);
         var outside = dDate.getUTCMonth() !== m;
         var cls = 'cal-day' + (outside ? ' outside' : '') + (dms === todayStamp ? ' today' : '');
@@ -1281,7 +1453,7 @@ try {
         }).join('');
         if (dayRecs.length > MAX_CHIPS) chips += '<span class="cal-chip more">+' + (dayRecs.length - MAX_CHIPS) + '건 더</span>';
         var stockLine = dayRecs.length ? '<span class="cal-stock">재고 ' + fmtNum(stockAsOf(dms)) + '두</span>' : '';
-        rows += '<div class="' + cls + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + stockLine + '</div>';
+        rows += '<div class="' + cls + '" data-action="openCalDayEdit" data-date="' + iso + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + stockLine + '</div>';
       }
     }
     var dowHtml = WEEKDAY_KR.map(function (w) { return '<div class="cal-dow">' + w + '</div>'; }).join('');
@@ -1295,6 +1467,7 @@ try {
           '<button class="btn ghost small" data-action="calToday">오늘</button>' +
           '<button class="btn ghost small" data-action="copyCalendar">' + (calendarCopyState === 'copied' ? '✓ 이미지 복사됨' : (calendarCopyState === 'saved' ? '💾 저장됨' : '📷 이미지로 복사')) + '</button>' +
         '</div>' +
+        '<p class="hint">날짜를 누르면 그날의 전입·전출 내역을 확인하고 수정할 수 있습니다.</p>' +
         '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
         '<div class="legend">' +
           '<span class="sw"><span class="dot2" style="background:var(--in)"></span>전입</span>' +
@@ -1302,7 +1475,123 @@ try {
           '<span class="sw"><span class="dot2" style="background:var(--out-ext)"></span>외부판매</span>' +
         '</div>' +
       '</section>' +
-      renderTransferCalculator();
+      renderCalDayEditModal() +
+      renderSimCalendar();
+  }
+
+  function renderCalDayEditModal() {
+    if (!calDayEditISO) return '';
+    var iso = calDayEditISO;
+    var dms = parseISO(iso);
+    var dayRecs = records.filter(function (r) { return r.date === iso; });
+    var rowsHtml = dayRecs.map(function (r) {
+      var badge = r.type === 'in' ? '<span class="badge in">전입</span>' : (r.subtype === 'farm' ? '<span class="badge farm">전출</span>' : '<span class="badge ext">외부판매</span>');
+      var delCell = confirmingDeleteId === r.id
+        ? '<button class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button class="btn ghost small" data-action="cancelDelete">취소</button>'
+        : '<button class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
+      return '<tr><td class="left">' + badge + '</td><td class="left">' + (r.type === 'in' ? IN_FARM_NAME : (r.farmName || '')) + '</td><td class="mono">' + fmtNum(r.head) + '두</td><td class="left">' + delCell + '</td></tr>';
+    }).join('');
+    return '' +
+      '<div class="modal-backdrop">' +
+        '<div class="modal-panel" style="max-width:560px">' +
+          '<div class="panel-head"><h3>' + fmtShort(dms) + ' 전입 · 전출</h3><button type="button" class="btn ghost small" data-action="closeCalDayEdit">닫기</button></div>' +
+          '<div class="table-wrap"><table><thead><tr><th class="left">구분</th><th class="left">농장명</th><th>두수</th><th class="left"></th></tr></thead><tbody>' +
+          (rowsHtml || '<tr><td colspan="4" class="empty">이 날짜에 등록된 내역이 없습니다.</td></tr>') +
+          '</tbody></table></div>' +
+          '<form class="field-row" id="calDayAddForm" style="margin-top:14px">' +
+            '<div class="field"><label>구분</label><select name="kind" id="calTypeSelect"><option value="in">전입</option><option value="out_farm">전출</option><option value="out_external">외부판매</option></select></div>' +
+            '<div class="field grow" id="calFarmField"><label>농장명</label><input type="text" name="farmName" id="calFarmNameInput" value="' + IN_FARM_NAME + '" disabled></div>' +
+            '<div class="field num"><label>두수</label><input type="number" name="head" min="1" required placeholder="0"></div>' +
+            '<button type="submit" class="btn">추가</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // ---------- 전입전출 시뮬레이션 캘린더 ----------
+  function renderSimCalendar() {
+    var y = simMonthCursor.y, m = simMonthCursor.m;
+    var firstOfMonth = Date.UTC(y, m, 1);
+    var lastOfMonth = Date.UTC(y, m + 1, 0);
+    var gridStartIdx = weekIndexOf(firstOfMonth);
+    var gridEndIdx = weekIndexOf(lastOfMonth);
+    var todayStamp = todayMs();
+    var rows = '';
+    for (var idx = gridStartIdx; idx <= gridEndIdx; idx++) {
+      var wk = computeWeek(idx);
+      for (var i = 0; i < 7; i++) {
+        var dms = wk.start + i * DAY_MS;
+        var iso = toISO(dms);
+        var dDate = new Date(dms);
+        var outside = dDate.getUTCMonth() !== m;
+        var v = simDayValue(iso);
+        var edited = !!simOverrides[iso];
+        var cls = 'cal-day' + (outside ? ' outside' : '') + (dms === todayStamp ? ' today' : '') + (edited ? ' sim-edited' : '');
+        var chips = '';
+        if (v.in) chips += '<span class="cal-chip in">전입 +' + fmtNum(v.in) + '</span>';
+        if (v.out_farm) chips += '<span class="cal-chip farm">전출 -' + fmtNum(v.out_farm) + '</span>';
+        if (v.out_external) chips += '<span class="cal-chip ext">외부판매 -' + fmtNum(v.out_external) + '</span>';
+        var hasAny = v.in || v.out_farm || v.out_external;
+        var stockLine = hasAny ? '<span class="cal-stock">재고 ' + fmtNum(simStockAsOf(dms)) + '두</span>' : '';
+        rows += '<div class="' + cls + '" data-action="openSimDayEdit" data-date="' + iso + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + stockLine + '</div>';
+      }
+    }
+    var dowHtml = WEEKDAY_KR.map(function (w) { return '<div class="cal-dow">' + w + '</div>'; }).join('');
+
+    var scenarios = settings.simScenarios || [];
+    var scenarioChips = scenarios.map(function (s) {
+      return '<span class="sim-chip' + (s.id === simActiveScenarioId ? ' active' : '') + '">' +
+        '<button type="button" class="sim-chip-name" data-action="loadSimScenario" data-id="' + s.id + '">' + s.name + '</button>' +
+        '<button type="button" class="sim-chip-del" data-action="deleteSimScenario" data-id="' + s.id + '">×</button>' +
+      '</span>';
+    }).join('');
+    var canSave = scenarios.length < 3 || simActiveScenarioId;
+
+    return '' +
+      '<section class="panel">' +
+        '<div class="panel-head"><h2>전입전출 시뮬레이션</h2></div>' +
+        '<p class="hint">위 전입전출 계획표를 기준으로, 날짜를 눌러 전입·전출 두수를 바꿔가며 재고 변화를 미리 확인할 수 있습니다. 가안으로 이름을 붙여 최대 3개까지 저장할 수 있고, 저장하지 않으면 화면을 벗어날 때 사라집니다.</p>' +
+        '<div class="sim-toolbar">' +
+          (scenarioChips ? '<div class="sim-chip-row">' + scenarioChips + '</div>' : '') +
+          '<div class="field-row">' +
+            '<div class="field grow"><label>가안 이름</label><input type="text" maxlength="20" placeholder="예: 8월 3주 조정안" value="' + simSaveNameDraft + '" data-action="setSimSaveName"></div>' +
+            '<button type="button" class="btn ghost small" data-action="saveSimScenario"' + (!canSave ? ' disabled' : '') + '>' + (simActiveScenarioId ? '덮어쓰기 저장' : '저장') + '</button>' +
+            '<button type="button" class="btn ghost small" data-action="resetSim">초기화</button>' +
+          '</div>' +
+          (!canSave ? '<p class="hint" style="margin:6px 0 0">가안은 최대 3개까지 저장할 수 있습니다. 기존 가안을 삭제한 뒤 저장해주세요.</p>' : '') +
+        '</div>' +
+        '<div class="cal-toolbar">' +
+          '<button class="btn ghost small" data-action="simPrev">◀</button>' +
+          '<span class="month-label">' + y + '년 ' + (m + 1) + '월</span>' +
+          '<button class="btn ghost small" data-action="simNext">▶</button>' +
+          '<button class="btn ghost small" data-action="simToday">오늘</button>' +
+        '</div>' +
+        '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
+      '</section>' +
+      renderSimDayEditModal();
+  }
+
+  function renderSimDayEditModal() {
+    if (!simDayEditISO) return '';
+    var iso = simDayEditISO;
+    var dms = parseISO(iso);
+    var v = simDayValue(iso);
+    var hasOverride = !!simOverrides[iso];
+    return '' +
+      '<div class="modal-backdrop">' +
+        '<div class="modal-panel" style="max-width:440px">' +
+          '<div class="panel-head"><h3>' + fmtShort(dms) + ' 시뮬레이션</h3><button type="button" class="btn ghost small" data-action="closeSimDayEdit">닫기</button></div>' +
+          '<div class="field-row">' +
+            '<div class="field num"><label>전입두수</label><input type="number" min="0" id="simEditIn" value="' + v.in + '"></div>' +
+            '<div class="field num"><label>전출(농장)두수</label><input type="number" min="0" id="simEditOutFarm" value="' + v.out_farm + '"></div>' +
+            '<div class="field num"><label>외부판매두수</label><input type="number" min="0" id="simEditOutExt" value="' + v.out_external + '"></div>' +
+          '</div>' +
+          '<div class="row" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">' +
+            '<button type="button" class="btn" data-action="applySimDayEdit" data-date="' + iso + '">적용</button>' +
+            (hasOverride ? '<button type="button" class="btn ghost small" data-action="clearSimDayOverride" data-date="' + iso + '">실제값으로 되돌리기</button>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
   }
 
   function roundRectPath(ctx, x, y, w, h, r) {
@@ -2655,6 +2944,7 @@ try {
       var g = groups[base];
       var inMs = excelSerialToMs(g.inDateSerial);
       return {
+        groupKey: base,
         date: excelSerialToISO(g.inDateSerial),
         week: Math.round((todayStamp - inMs) / (7 * DAY_MS)),
         farm: g.farmName,
@@ -2812,7 +3102,7 @@ try {
 
   app.addEventListener('click', function (e) {
     if (e.target.classList && e.target.classList.contains('modal-backdrop')) {
-      if (modalMouseDownOnBackdrop) { openEditModal = null; render(); }
+      if (modalMouseDownOnBackdrop) { closeAllModals(); render(); }
       modalMouseDownOnBackdrop = false;
       return;
     }
@@ -2822,11 +3112,16 @@ try {
     runAction(b);
   });
 
+  function closeAllModals() { openEditModal = null; calDayEditISO = null; simDayEditISO = null; }
+
   function runAction(b) {
     var action = b.dataset.action;
     if (action === 'setTab') { activeTab = b.dataset.tab; render(); }
     else if (action === 'openEditStatusModal') { openEditModal = b.dataset.tab; render(); }
-    else if (action === 'closeEditModal') { openEditModal = null; render(); }
+    else if (action === 'closeEditModal') {
+      statusBulkMode[openEditModal] = false; statusBulkChecked[openEditModal] = {}; statusBulkConfirming[openEditModal] = false;
+      openEditModal = null; render();
+    }
     else if (action === 'exportWorkbook') { exportStatusWorkbook(); }
     else if (action === 'goHome') { activeTab = 'lukaStatus'; render(); }
     else if (action === 'addStatusRow') {
@@ -2840,6 +3135,31 @@ try {
       var rows2 = statusRowsOf(tabKey2).filter(function (r, i) { return i !== idx2; });
       saveStatusRows(tabKey2, rows2);
     }
+    else if (action === 'toggleSwitchField') {
+      var swTab = b.dataset.tab, swIdx = Number(b.dataset.row), swField = b.dataset.field;
+      var swRows = statusRowsOf(swTab).slice();
+      var swRow = Object.assign({}, swRows[swIdx]);
+      swRow[swField] = !swRow[swField];
+      swRows[swIdx] = swRow;
+      saveStatusRows(swTab, swRows);
+    }
+    else if (action === 'startBulkDelete') { statusBulkMode[b.dataset.tab] = true; statusBulkChecked[b.dataset.tab] = {}; statusBulkConfirming[b.dataset.tab] = false; render(); }
+    else if (action === 'cancelBulkDelete') { statusBulkMode[b.dataset.tab] = false; statusBulkChecked[b.dataset.tab] = {}; statusBulkConfirming[b.dataset.tab] = false; render(); }
+    else if (action === 'requestBulkDelete') {
+      var rbTab = b.dataset.tab;
+      var rbChecked = statusBulkChecked[rbTab] || {};
+      var rbCount = Object.keys(rbChecked).filter(function (k) { return rbChecked[k]; }).length;
+      if (!rbCount) return;
+      statusBulkConfirming[rbTab] = true; render();
+    }
+    else if (action === 'confirmBulkDelete') {
+      var bdTab = b.dataset.tab;
+      var bdChecked = statusBulkChecked[bdTab] || {};
+      var bdIdxs = Object.keys(bdChecked).filter(function (k) { return bdChecked[k]; }).map(Number);
+      var bdRows = statusRowsOf(bdTab).filter(function (r, i) { return bdIdxs.indexOf(i) === -1; });
+      statusBulkMode[bdTab] = false; statusBulkChecked[bdTab] = {}; statusBulkConfirming[bdTab] = false;
+      saveStatusRows(bdTab, bdRows);
+    }
     else if (action === 'triggerWorkbookImport') { var wfi = document.getElementById('workbookFileInput'); if (wfi) wfi.click(); }
     else if (action === 'cancelWorkbookImport') { pendingWorkbookImport = null; workbookImportError = null; render(); }
     else if (action === 'confirmWorkbookImport') {
@@ -2850,7 +3170,57 @@ try {
     else if (action === 'calPrev') { calMonthCursor.m--; if (calMonthCursor.m < 0) { calMonthCursor.m = 11; calMonthCursor.y--; } render(); }
     else if (action === 'calNext') { calMonthCursor.m++; if (calMonthCursor.m > 11) { calMonthCursor.m = 0; calMonthCursor.y++; } render(); }
     else if (action === 'calToday') { var t = new Date(); calMonthCursor = { y: t.getFullYear(), m: t.getMonth() }; render(); }
-    else if (action === 'resetCalc') { calcDate = toISO(todayMs()); calcInHead = 0; calcOutHead = 0; render(); }
+    else if (action === 'openCalDayEdit') { calDayEditISO = b.dataset.date; render(); }
+    else if (action === 'closeCalDayEdit') { calDayEditISO = null; render(); }
+    else if (action === 'simPrev') { simMonthCursor.m--; if (simMonthCursor.m < 0) { simMonthCursor.m = 11; simMonthCursor.y--; } render(); }
+    else if (action === 'simNext') { simMonthCursor.m++; if (simMonthCursor.m > 11) { simMonthCursor.m = 0; simMonthCursor.y++; } render(); }
+    else if (action === 'simToday') { var st = new Date(); simMonthCursor = { y: st.getFullYear(), m: st.getMonth() }; render(); }
+    else if (action === 'resetSim') { simOverrides = {}; simActiveScenarioId = null; simSaveNameDraft = ''; render(); }
+    else if (action === 'openSimDayEdit') { simDayEditISO = b.dataset.date; render(); }
+    else if (action === 'closeSimDayEdit') { simDayEditISO = null; render(); }
+    else if (action === 'applySimDayEdit') {
+      var aIso = b.dataset.date;
+      var inEl = document.getElementById('simEditIn'), outFEl = document.getElementById('simEditOutFarm'), outEEl = document.getElementById('simEditOutExt');
+      var inV = Number(inEl && inEl.value) || 0, outF = Number(outFEl && outFEl.value) || 0, outE = Number(outEEl && outEEl.value) || 0;
+      var ov3 = Object.assign({}, simOverrides);
+      ov3[aIso] = { in: inV, out_farm: outF, out_external: outE };
+      simOverrides = ov3;
+      simDayEditISO = null;
+      render();
+    }
+    else if (action === 'clearSimDayOverride') {
+      var cIso = b.dataset.date;
+      var ov2 = Object.assign({}, simOverrides);
+      delete ov2[cIso];
+      simOverrides = ov2;
+      simDayEditISO = null;
+      render();
+    }
+    else if (action === 'loadSimScenario') {
+      var sid = b.dataset.id;
+      var sc = (settings.simScenarios || []).filter(function (s) { return s.id === sid; })[0];
+      if (sc) { simOverrides = Object.assign({}, sc.overrides); simActiveScenarioId = sc.id; simSaveNameDraft = sc.name; render(); }
+    }
+    else if (action === 'deleteSimScenario') {
+      var did = b.dataset.id;
+      var list = (settings.simScenarios || []).filter(function (s) { return s.id !== did; });
+      if (simActiveScenarioId === did) simActiveScenarioId = null;
+      saveSettings({ simScenarios: list });
+    }
+    else if (action === 'saveSimScenario') {
+      var scenarios2 = (settings.simScenarios || []).slice();
+      var name = (simSaveNameDraft || '').trim();
+      if (!name) { alert('가안 이름을 입력해주세요.'); return; }
+      if (simActiveScenarioId) {
+        scenarios2 = scenarios2.map(function (s) { return s.id === simActiveScenarioId ? { id: s.id, name: name, overrides: Object.assign({}, simOverrides) } : s; });
+      } else {
+        if (scenarios2.length >= 3) { alert('가안은 최대 3개까지 저장할 수 있습니다.'); return; }
+        var newId = 'sim_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        scenarios2.push({ id: newId, name: name, overrides: Object.assign({}, simOverrides) });
+        simActiveScenarioId = newId;
+      }
+      saveSettings({ simScenarios: scenarios2 });
+    }
     else if (action === 'copyCalendar') {
       var blobPromise = calendarImageBlobPromise();
       var markState = function (state) {
@@ -2896,6 +3266,14 @@ try {
       farmInput.value = isOut ? '' : IN_FARM_NAME;
       return;
     }
+    if (t.id === 'calTypeSelect') {
+      var isOut2 = t.value !== 'in';
+      var farmInput2 = document.getElementById('calFarmNameInput');
+      farmInput2.disabled = !isOut2;
+      farmInput2.placeholder = isOut2 ? '예: 풍년농장' : '';
+      farmInput2.value = isOut2 ? '' : IN_FARM_NAME;
+      return;
+    }
     if (t.id === 'importFileInput') {
       handleImportFile(t.files && t.files[0]);
       t.value = '';
@@ -2923,9 +3301,14 @@ try {
     else if (action === 'setLukaStatusMonthFilter') { lukaStatusFilterMonth = t.value; render(); }
     else if (action === 'setReshipMonthFilter') { reshipFilterMonth = t.value; render(); }
     else if (action === 'setReshipFarmFilter') { reshipFilterFarm = t.value; render(); }
-    else if (action === 'setCalcDate') { calcDate = t.value || toISO(todayMs()); render(); }
-    else if (action === 'setCalcIn') { calcInHead = Number(t.value) || 0; render(); }
-    else if (action === 'setCalcOut') { calcOutHead = Number(t.value) || 0; render(); }
+    else if (action === 'setSimSaveName') { simSaveNameDraft = t.value; render(); }
+    else if (action === 'toggleBulkCheck') {
+      var tbTab = t.dataset.tab, tbIdx = Number(t.dataset.row);
+      var tbSet = Object.assign({}, statusBulkChecked[tbTab]);
+      tbSet[tbIdx] = t.checked;
+      statusBulkChecked[tbTab] = tbSet;
+      render();
+    }
     else if (action === 'setStatusCell') {
       var stTab = t.dataset.tab, stRow = Number(t.dataset.row), stField = t.dataset.field, stType = t.dataset.type;
       var stRows = statusRowsOf(stTab).slice();
@@ -2934,34 +3317,56 @@ try {
       else if (stType === 'percent') row[stField] = (Number(t.value) || 0) / 100;
       else if (stType === 'checkbox') row[stField] = t.checked;
       else row[stField] = t.value;
+      row = recomputeStatusRow(stTab, row);
       stRows[stRow] = row;
       saveStatusRows(stTab, stRows);
     }
   });
 
   app.addEventListener('submit', function (e) {
-    if (e.target.id !== 'recordForm') return;
-    e.preventDefault();
-    var f = new FormData(e.target);
-    var kind = f.get('kind');
-    var head = Number(f.get('head'));
-    if (!head || head <= 0) return;
-    var rec = {
-      date: f.get('date'),
-      type: kind === 'in' ? 'in' : 'out',
-      subtype: kind === 'out_farm' ? 'farm' : (kind === 'out_external' ? 'external' : null),
-      farmName: kind === 'in' ? IN_FARM_NAME : (f.get('farmName') || '').trim(),
-      head: head
-    };
-    addRecord(rec);
-    e.target.reset();
-    document.querySelector('#recordForm [name="date"]').value = toISO(todayMs());
-    document.getElementById('farmNameInput').value = IN_FARM_NAME;
-    document.getElementById('farmNameInput').disabled = true;
+    if (e.target.id === 'recordForm') {
+      e.preventDefault();
+      var f = new FormData(e.target);
+      var kind = f.get('kind');
+      var head = Number(f.get('head'));
+      if (!head || head <= 0) return;
+      var rec = {
+        date: f.get('date'),
+        type: kind === 'in' ? 'in' : 'out',
+        subtype: kind === 'out_farm' ? 'farm' : (kind === 'out_external' ? 'external' : null),
+        farmName: kind === 'in' ? IN_FARM_NAME : (f.get('farmName') || '').trim(),
+        head: head
+      };
+      addRecord(rec);
+      e.target.reset();
+      document.querySelector('#recordForm [name="date"]').value = toISO(todayMs());
+      document.getElementById('farmNameInput').value = IN_FARM_NAME;
+      document.getElementById('farmNameInput').disabled = true;
+      return;
+    }
+    if (e.target.id === 'calDayAddForm') {
+      e.preventDefault();
+      var f2 = new FormData(e.target);
+      var kind2 = f2.get('kind');
+      var head2 = Number(f2.get('head'));
+      if (!head2 || head2 <= 0) return;
+      var rec2 = {
+        date: calDayEditISO,
+        type: kind2 === 'in' ? 'in' : 'out',
+        subtype: kind2 === 'out_farm' ? 'farm' : (kind2 === 'out_external' ? 'external' : null),
+        farmName: kind2 === 'in' ? IN_FARM_NAME : (f2.get('farmName') || '').trim(),
+        head: head2
+      };
+      addRecord(rec2);
+      e.target.reset();
+      var cdf = document.getElementById('calFarmNameInput');
+      if (cdf) { cdf.value = IN_FARM_NAME; cdf.disabled = true; }
+      return;
+    }
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && openEditModal) { openEditModal = null; render(); }
+    if (e.key === 'Escape' && (openEditModal || calDayEditISO || simDayEditISO)) { closeAllModals(); render(); }
   });
 
   render();
