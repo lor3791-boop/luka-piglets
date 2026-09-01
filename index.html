@@ -92,8 +92,12 @@
   }
   .mono { font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Consolas', monospace; font-variant-numeric: tabular-nums; }
   h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 700; letter-spacing: 0; }
-  button { font-family: inherit; }
-  input, select, button { font-size: 14px; }
+  button { font-family: inherit; font-size: 14px; }
+  /* 모바일 사파리 등에서 input/select 포커스 시 자동 확대되는 것을 막기 위해 16px 이상 유지 */
+  input, select { font-size: 16px; }
+  button, [data-action] { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  button:disabled, [data-action][disabled] { cursor: not-allowed; }
+  body.modal-open { overflow: hidden; }
 
   #app { max-width: 1080px; margin: 0 auto; padding: 0 16px 48px; }
 
@@ -132,10 +136,12 @@
   .tabs { display: flex; gap: 2px; background: var(--surface-2); padding: 4px; border-radius: var(--radius-full); flex-wrap: wrap; }
   .tab-btn {
     border: none; background: transparent; color: var(--text-muted); font-size: 12.5px;
-    padding: 6px 13px; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;
-    transition: background .15s, color .15s; white-space: nowrap;
+    padding: 6px 16px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-full); cursor: pointer; font-weight: 600;
+    transition: background .15s, color .15s, transform .1s; white-space: nowrap;
   }
   .tab-btn.active { background: var(--surface); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+  .tab-btn:active { transform: scale(0.96); }
   .sync-pill {
     font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
     padding: 5px 10px; border-radius: var(--radius-full); background: var(--surface-2);
@@ -182,16 +188,20 @@
   .field.date input { width: 148px; }
 
   .btn {
-    border: none; border-radius: var(--radius-btn); padding: 9px 18px; cursor: pointer; font-weight: 600;
+    border: none; border-radius: var(--radius-btn); padding: 9px 18px; min-height: 44px; cursor: pointer; font-weight: 600;
     background: var(--accent); color: var(--on-accent);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background .15s, transform .1s;
   }
   .btn:hover { background: var(--accent-strong); }
+  .btn:active { transform: scale(0.96); }
   .btn.ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
   .btn.ghost:hover { background: var(--surface-2); color: var(--text); }
-  .btn.danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 5px 12px; font-size: 12.5px; }
+  .btn.danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 14px; min-height: 40px; font-size: 12.5px; }
   .btn.danger-outline:hover { background: var(--danger-soft); }
-  .btn.small { padding: 5px 13px; font-size: 12.5px; }
+  .btn.small { padding: 8px 14px; min-height: 40px; font-size: 12.5px; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn:disabled:active { transform: none; }
 
   .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: var(--radius-full); }
   .badge.in { background: var(--in-soft); color: var(--in); }
@@ -208,7 +218,7 @@
   tbody tr.total-row { font-weight: 700; background: var(--surface-2); }
   td.tone-danger { color: var(--danger); font-weight: 600; }
   td.tone-success { color: var(--success); font-weight: 600; }
-  input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  input[type="checkbox"] { accent-color: var(--accent); width: 20px; height: 20px; cursor: pointer; touch-action: manipulation; }
   .inline-input { width: 64px; border: 1px solid var(--border); background: var(--field); color: var(--text); border-radius: var(--radius-sm); padding: 5px 7px; text-align: right; }
   .cell-input { width: 100%; min-width: 72px; border: 1px solid transparent; background: transparent; color: var(--text); padding: 3px 4px; text-align: right; border-radius: 6px; }
   .cell-input:focus { background: var(--field); border-color: var(--border); outline: 2px solid var(--info); }
@@ -250,11 +260,12 @@
   .panel-head .count { font-weight: 500; color: var(--text-faint); font-size: 12.5px; }
 
   .icon-btn {
-    display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
     border-radius: var(--radius-btn); border: 1px solid var(--border); background: var(--surface); color: var(--text);
-    cursor: pointer; font-size: 15px; padding: 0;
+    cursor: pointer; font-size: 15px; padding: 0; transition: background .15s, transform .1s;
   }
   .icon-btn:hover { background: var(--surface-2); }
+  .icon-btn:active { transform: scale(0.94); }
 
   .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
   @media (max-width: 760px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
@@ -270,22 +281,27 @@
   .modal-panel h3 { font-size: 16px; font-weight: 700; }
 
   .toggle-sw {
-    position: relative; width: 40px; height: 22px; border-radius: var(--radius-full);
+    position: relative; width: 44px; height: 26px; border-radius: var(--radius-full);
     border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; padding: 0; flex: none;
     transition: background .15s, border-color .15s;
   }
+  .toggle-sw::before {
+    /* 시각적 크기는 그대로 두되, 터치 히트 영역은 사방으로 넓혀 모바일에서 누르기 쉽게 한다 */
+    content: ''; position: absolute; inset: -9px;
+  }
   .toggle-sw::after {
-    content: ''; position: absolute; top: 1px; left: 1px; width: 18px; height: 18px; border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 2px var(--shadow); transition: left .15s;
+    content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px var(--shadow); transition: left .15s, transform .1s;
   }
   .toggle-sw.on { background: var(--success); border-color: var(--success); }
-  .toggle-sw.on::after { left: 19px; }
+  .toggle-sw.on::after { left: 20px; }
+  .toggle-sw:active::after { transform: scale(0.9); }
 
   /* editable status card layout (수정/추가 팝업) */
   .edit-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
   .edit-cards { display: flex; flex-direction: column; gap: 10px; max-height: 64vh; overflow-y: auto; padding-right: 2px; }
   .edit-card { border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; background: var(--surface); }
-  .edit-card .ef-check { padding-top: 6px; }
+  .edit-card .ef-check { padding: 10px 10px 10px 0; display: inline-flex; align-items: flex-start; cursor: pointer; }
   .ef-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px 10px; min-width: 0; }
   .ef-item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .ef-item.locked .ef-value { color: var(--text-muted); }
@@ -298,13 +314,16 @@
   .sim-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .sim-chip { display: inline-flex; align-items: center; gap: 2px; background: var(--surface-2); border-radius: var(--radius-full); padding: 2px; }
   .sim-chip.active { outline: 2px solid var(--accent); }
-  .sim-chip-name { border: none; background: transparent; color: var(--text); font-weight: 600; font-size: 12.5px; padding: 5px 10px; border-radius: var(--radius-full); cursor: pointer; }
+  .sim-chip-name { border: none; background: transparent; color: var(--text); font-weight: 600; font-size: 12.5px; padding: 10px 12px; min-height: 40px; border-radius: var(--radius-full); cursor: pointer; transition: background .15s, transform .1s; }
   .sim-chip-name:hover { background: var(--surface); }
-  .sim-chip-del { border: none; background: transparent; color: var(--text-faint); width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 14px; line-height: 1; }
+  .sim-chip-name:active { transform: scale(0.96); }
+  .sim-chip-del { border: none; background: transparent; color: var(--text-faint); width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 15px; line-height: 1; transition: background .15s, transform .1s; }
   .sim-chip-del:hover { background: var(--danger-soft); color: var(--danger); }
+  .sim-chip-del:active { transform: scale(0.9); }
 
-  .cal-day[data-action] { cursor: pointer; }
+  .cal-day[data-action] { cursor: pointer; touch-action: manipulation; transition: background .1s; }
   .cal-day[data-action]:hover { background: var(--surface-2); }
+  .cal-day[data-action]:active { background: var(--border-soft); }
   .cal-day.outside[data-action]:hover { background: var(--bg); }
   .cal-day.sim-edited { box-shadow: inset 0 0 0 2px var(--accent-strong); }
 
@@ -350,10 +369,10 @@
   <div class="topbar">
     <button type="button" class="brand" data-action="goHome"><h1>후기자돈사 운영현황(루카)</h1></button>
     <div class="tabs" id="tabSwitch" data-action-group="tabs">
-      <button class="tab-btn" data-action="setTab" data-tab="lukaStatus">후기자돈현황</button>
-      <button class="tab-btn" data-action="setTab" data-tab="dash">전입출 현황판</button>
-      <button class="tab-btn" data-action="setTab" data-tab="calendar">전입전출 계획표</button>
-      <button class="tab-btn" data-action="setTab" data-tab="feedCost">사육비산출</button>
+      <button type="button" class="tab-btn" data-action="setTab" data-tab="lukaStatus">후기자돈현황</button>
+      <button type="button" class="tab-btn" data-action="setTab" data-tab="dash">전입출 현황판</button>
+      <button type="button" class="tab-btn" data-action="setTab" data-tab="calendar">전입전출 계획표</button>
+      <button type="button" class="tab-btn" data-action="setTab" data-tab="feedCost">사육비산출</button>
     </div>
     <button type="button" class="icon-btn" data-action="exportWorkbook" title="엑셀로 다운로드" aria-label="엑셀로 다운로드">⬇️</button>
     <span class="sync-pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncText">연결 중…</span></span>
@@ -778,6 +797,8 @@ try {
     else if (activeTab === 'feedCost') view.innerHTML = renderFeedCost();
     else if (activeTab === 'calendar') view.innerHTML = renderCalendar();
     else view.innerHTML = renderDash();
+    // 팝업이 열려 있는 동안은 뒷배경(body)이 스크롤되지 않도록 잠근다.
+    document.body.classList.toggle('modal-open', !!(openEditModal || calDayEditISO || simDayEditISO));
   }
 
   var KIND_LABELS = { in: '전입', out_farm: '전출', out_external: '외부판매' };
@@ -834,12 +855,12 @@ try {
       title: '월대사육비',
       dateKey: 'inDate',
       columns: [
-        { key: 'batchNo', label: '배치번호', type: 'text' },
+        { key: 'batchNo', label: '그룹명', type: 'text' },
         { key: 'inDate', label: '전입일자', type: 'date' },
         { key: 'inHead', label: '전입두수', type: 'number', unit: 'head' },
         { key: 'amount', label: '지급액(계)', type: 'number', unit: 'won' },
         { key: 'settleHead', label: '정산예정두수', type: 'number', unit: 'head' },
-        { key: 'perHead', label: '두당금액', type: 'number', unit: 'won' },
+        { key: 'perHead', label: '두당금액', type: 'number', unit: 'won', weightBasis: 'inHead' },
         { key: 'settleMonth', label: '정산예정월', type: 'text' },
         { key: 'settled', label: '정산완료여부', type: 'checkbox' },
         { key: 'note', label: '특이사항', type: 'text' }
@@ -871,6 +892,9 @@ try {
       var inH = Number(row.in) || 0, claim = Number(row.claim) || 0, death2 = Number(row.death) || 0, shipped2 = Number(row.shipped) || 0;
       row.stock = Math.max(0, (inH - claim) - death2 - shipped2);
       row.survivalRate = inH ? (inH - death2) / inH : 0;
+    } else if (tabKey === 'feedCost') {
+      var amount = Number(row.amount) || 0, settleHead = Number(row.settleHead) || 0;
+      row.perHead = settleHead ? Math.round(amount / settleHead) : 0;
     }
     return row;
   }
@@ -1055,10 +1079,10 @@ try {
       toolbarHtml = '<button type="button" class="btn ghost small" data-action="addStatusRow" data-tab="' + tabKey + '">+ 행 추가</button>' +
         '<button type="button" class="btn ghost small" data-action="startBulkDelete" data-tab="' + tabKey + '">삭제</button>';
     } else if (!confirming) {
-      toolbarHtml = '<button type="button" class="btn danger-outline" data-action="requestBulkDelete" data-tab="' + tabKey + '">선택 삭제 (' + checkedCount + ')</button>' +
+      toolbarHtml = '<button type="button" class="btn danger-outline" data-action="requestBulkDelete" data-tab="' + tabKey + '">선택 삭제 (' + fmtNum(checkedCount) + ')</button>' +
         '<button type="button" class="btn ghost small" data-action="cancelBulkDelete" data-tab="' + tabKey + '">취소</button>';
     } else {
-      toolbarHtml = '<span class="hint" style="margin:0">' + checkedCount + '개 항목을 정말 삭제할까요?</span>' +
+      toolbarHtml = '<span class="hint" style="margin:0">' + fmtNum(checkedCount) + '개 항목을 정말 삭제할까요?</span>' +
         '<button type="button" class="btn danger-outline" data-action="confirmBulkDelete" data-tab="' + tabKey + '">확인 삭제</button>' +
         '<button type="button" class="btn ghost small" data-action="cancelBulkDelete" data-tab="' + tabKey + '">취소</button>';
     }
@@ -1126,9 +1150,9 @@ try {
 
   function renderWorkbookImportBox() {
     var counts = pendingWorkbookImport ? [
-      pendingWorkbookImport.lukaStatusRows ? ('후기자돈 전입현황 ' + pendingWorkbookImport.lukaStatusRows.length + '건') : null,
-      pendingWorkbookImport.reshipRows ? ('재분양돈군현황 ' + pendingWorkbookImport.reshipRows.length + '건') : null,
-      pendingWorkbookImport.feedCostRows ? ('사육비산출 ' + pendingWorkbookImport.feedCostRows.length + '건') : null
+      pendingWorkbookImport.lukaStatusRows ? ('후기자돈 전입현황 ' + fmtNum(pendingWorkbookImport.lukaStatusRows.length) + '건') : null,
+      pendingWorkbookImport.reshipRows ? ('재분양돈군현황 ' + fmtNum(pendingWorkbookImport.reshipRows.length) + '건') : null,
+      pendingWorkbookImport.feedCostRows ? ('사육비산출 ' + fmtNum(pendingWorkbookImport.feedCostRows.length) + '건') : null
     ].filter(Boolean).join(' · ') : '';
     return '' +
       '<div class="import-box">' +
@@ -1292,8 +1316,8 @@ try {
           : (r.subtype === 'farm' ? '<span class="badge farm">전출</span>' : '<span class="badge ext">외부판매</span>');
         var stockAt = stockAsOf(parseISO(r.date));
         var delRow = confirmingDeleteId === r.id
-          ? '<button class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button class="btn ghost small" data-action="cancelDelete">취소</button>'
-          : '<button class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
+          ? '<button type="button" class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button type="button" class="btn ghost small" data-action="cancelDelete">취소</button>'
+          : '<button type="button" class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
         return '<tr><td class="left">' + fmtShort(parseISO(r.date)) + '</td><td class="left">' + weekOf(parseISO(r.date)).label + '</td><td class="left">' + badge + '</td>' +
           '<td class="left">' + (r.type === 'in' ? IN_FARM_NAME : (r.farmName || '')) + '</td>' +
           '<td class="mono">' + fmtNum(r.head) + '두</td>' +
@@ -1381,7 +1405,7 @@ try {
 
       '<section class="panel">' +
         '<div class="panel-head">' +
-          '<h2>입력 내역 <span class="count">(총 ' + records.length + '건)</span></h2>' +
+          '<h2>입력 내역 <span class="count">(총 ' + fmtNum(records.length) + '건)</span></h2>' +
           '<button type="button" class="btn ghost small" data-action="toggleRecords">' + (recordsExpanded ? '숨기기 ▲' : '펼쳐보기 ▾') + '</button>' +
         '</div>' +
         (recordsExpanded ? (
@@ -1408,8 +1432,8 @@ try {
       ? '<ul class="warn-list">' + p.warnings.map(function (w) { return '<li>' + w + '</li>'; }).join('') + '</ul>'
       : '';
     return '<div style="margin-top:10px">' +
-      '<p class="hint" style="margin:0 0 6px;color:var(--text)"><strong>' + p.fileName + '</strong>에서 ' + p.records.length + '건을 읽었습니다' +
-      (p.warnings.length ? ' (건너뜀 ' + p.warnings.length + '건)' : '') + '. 확인을 누르면 현재 저장된 전체 전입·전출 내역이 이 파일 내용으로 교체됩니다.</p>' +
+      '<p class="hint" style="margin:0 0 6px;color:var(--text)"><strong>' + p.fileName + '</strong>에서 ' + fmtNum(p.records.length) + '건을 읽었습니다' +
+      (p.warnings.length ? ' (건너뜀 ' + fmtNum(p.warnings.length) + '건)' : '') + '. 확인을 누르면 현재 저장된 전체 전입·전출 내역이 이 파일 내용으로 교체됩니다.</p>' +
       warnHtml +
       '<div class="row" style="margin-top:8px">' +
         '<button type="button" class="btn" data-action="confirmImport">이 내용으로 전체 교체</button>' +
@@ -1451,7 +1475,7 @@ try {
           var fname = r.farmName ? '<span class="fname"> · ' + r.farmName + '</span>' : '';
           return '<span class="cal-chip ' + cls2 + '">' + label + ' -' + fmtNum(r.head) + fname + '</span>';
         }).join('');
-        if (dayRecs.length > MAX_CHIPS) chips += '<span class="cal-chip more">+' + (dayRecs.length - MAX_CHIPS) + '건 더</span>';
+        if (dayRecs.length > MAX_CHIPS) chips += '<span class="cal-chip more">+' + fmtNum(dayRecs.length - MAX_CHIPS) + '건 더</span>';
         var stockLine = dayRecs.length ? '<span class="cal-stock">재고 ' + fmtNum(stockAsOf(dms)) + '두</span>' : '';
         rows += '<div class="' + cls + '" data-action="openCalDayEdit" data-date="' + iso + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + stockLine + '</div>';
       }
@@ -1461,11 +1485,11 @@ try {
     return '' +
       '<section class="panel">' +
         '<div class="cal-toolbar">' +
-          '<button class="btn ghost small" data-action="calPrev">◀</button>' +
+          '<button type="button" class="btn ghost small" data-action="calPrev">◀</button>' +
           '<span class="month-label">' + y + '년 ' + (m + 1) + '월</span>' +
-          '<button class="btn ghost small" data-action="calNext">▶</button>' +
-          '<button class="btn ghost small" data-action="calToday">오늘</button>' +
-          '<button class="btn ghost small" data-action="copyCalendar">' + (calendarCopyState === 'copied' ? '✓ 이미지 복사됨' : (calendarCopyState === 'saved' ? '💾 저장됨' : '📷 이미지로 복사')) + '</button>' +
+          '<button type="button" class="btn ghost small" data-action="calNext">▶</button>' +
+          '<button type="button" class="btn ghost small" data-action="calToday">오늘</button>' +
+          '<button type="button" class="btn ghost small" data-action="copyCalendar">' + (calendarCopyState === 'copied' ? '✓ 이미지 복사됨' : (calendarCopyState === 'saved' ? '💾 저장됨' : '📷 이미지로 복사')) + '</button>' +
         '</div>' +
         '<p class="hint">날짜를 누르면 그날의 전입·전출 내역을 확인하고 수정할 수 있습니다.</p>' +
         '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
@@ -1487,8 +1511,8 @@ try {
     var rowsHtml = dayRecs.map(function (r) {
       var badge = r.type === 'in' ? '<span class="badge in">전입</span>' : (r.subtype === 'farm' ? '<span class="badge farm">전출</span>' : '<span class="badge ext">외부판매</span>');
       var delCell = confirmingDeleteId === r.id
-        ? '<button class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button class="btn ghost small" data-action="cancelDelete">취소</button>'
-        : '<button class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
+        ? '<button type="button" class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button type="button" class="btn ghost small" data-action="cancelDelete">취소</button>'
+        : '<button type="button" class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
       return '<tr><td class="left">' + badge + '</td><td class="left">' + (r.type === 'in' ? IN_FARM_NAME : (r.farmName || '')) + '</td><td class="mono">' + fmtNum(r.head) + '두</td><td class="left">' + delCell + '</td></tr>';
     }).join('');
     return '' +
@@ -1561,10 +1585,10 @@ try {
           (!canSave ? '<p class="hint" style="margin:6px 0 0">가안은 최대 3개까지 저장할 수 있습니다. 기존 가안을 삭제한 뒤 저장해주세요.</p>' : '') +
         '</div>' +
         '<div class="cal-toolbar">' +
-          '<button class="btn ghost small" data-action="simPrev">◀</button>' +
+          '<button type="button" class="btn ghost small" data-action="simPrev">◀</button>' +
           '<span class="month-label">' + y + '년 ' + (m + 1) + '월</span>' +
-          '<button class="btn ghost small" data-action="simNext">▶</button>' +
-          '<button class="btn ghost small" data-action="simToday">오늘</button>' +
+          '<button type="button" class="btn ghost small" data-action="simNext">▶</button>' +
+          '<button type="button" class="btn ghost small" data-action="simToday">오늘</button>' +
         '</div>' +
         '<div class="cal-scroll"><div class="cal-grid">' + dowHtml + rows + '</div></div>' +
       '</section>' +
@@ -1721,7 +1745,7 @@ try {
         if (dayRecs.length > maxLines) {
           ctx.fillStyle = '#707070';
           ctx.font = '600 11px "IBM Plex Sans KR", sans-serif';
-          ctx.fillText('+' + (dayRecs.length - maxLines) + '건 더', cx + 7, ty + 9);
+          ctx.fillText('+' + fmtNum(dayRecs.length - maxLines) + '건 더', cx + 7, ty + 9);
         }
 
         if (dayRecs.length) {
@@ -2962,7 +2986,7 @@ try {
   }
 
   function parseFeedCostSheetRows(rows) {
-    // 월대사육비: 헤더 4행, 데이터는 5행부터. B=농장명, D=배치번호, E=전입일자, F=전입두수,
+    // 월대사육비: 헤더 4행, 데이터는 5행부터. B=농장명, D=배치번호(그룹명), E=전입일자, F=전입두수,
     // AE=계, AF=정산예정두수, AG=두당금액, AH=정산예정월, AI=정산완료여부, AJ=특이사항
     var out = [];
     for (var r = 5; r < rows.length; r++) {
@@ -2972,7 +2996,7 @@ try {
       if (!farmName || !batchNo) continue;
       if (String(farmName).trim() !== '자돈_루카') continue;
       out.push({
-        batchNo: String(batchNo).trim(),
+        batchNo: groupBaseName(String(batchNo).trim()),
         inDate: row[4] ? excelSerialToISO(row[4]) : '',
         inHead: Number(row[5]) || 0,
         amount: Number(row[30]) || 0,
@@ -3020,6 +3044,18 @@ try {
     return out;
   }
 
+  // 엑셀을 다시 올려도 웹사이트에서 직접 체크해 둔 정산여부는 지워지지 않도록, key가 같은
+  // 기존 행의 settled 값을 새로 만든 행에 그대로 옮겨온다.
+  function preserveSettledByKey(newRows, oldRows, keyField) {
+    if (!oldRows || !oldRows.length) return newRows;
+    var byKey = {};
+    oldRows.forEach(function (r) { if (r[keyField]) byKey[r[keyField]] = r; });
+    return newRows.map(function (r) {
+      var old = r[keyField] && byKey[r[keyField]];
+      return old ? Object.assign({}, r, { settled: !!old.settled }) : r;
+    });
+  }
+
   // 여러 파일을 한 번에 올려도(농장전체전입현황/월대사육비/농장별 돈수불이 각각 다른 파일이어도)
   // 파일마다 찾은 시트를 합쳐서 하나의 결과로 만든다.
   async function importFarmwideFiles(files) {
@@ -3037,8 +3073,8 @@ try {
     var result = {};
     if (farmwideRows) {
       var parsed = parseFarmwideSheetRows(farmwideRows);
-      result.lukaStatusRows = buildLukaStatusFromFarmwide(parsed, donsubulMap);
-      result.reshipRows = buildReshipFromFarmwide(parsed);
+      result.lukaStatusRows = preserveSettledByKey(buildLukaStatusFromFarmwide(parsed, donsubulMap), statusRowsOf('lukaStatus'), 'groupKey');
+      result.reshipRows = preserveSettledByKey(buildReshipFromFarmwide(parsed), statusRowsOf('reship'), 'groupKey');
     } else if (donsubulMap) {
       // 농장전체전입현황 없이 돈수불 파일만 올린 경우, 이미 저장된 후기자돈현황 행에
       // (이전에 인식해 둔) 그룹키가 있으면 그 행의 외부판매 두수만 갱신한다.
@@ -3053,7 +3089,7 @@ try {
       }
     }
     if (feedCostSheetRows) {
-      result.feedCostRows = parseFeedCostSheetRows(feedCostSheetRows);
+      result.feedCostRows = preserveSettledByKey(parseFeedCostSheetRows(feedCostSheetRows), statusRowsOf('feedCost'), 'batchNo');
     }
     return result;
   }
