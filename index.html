@@ -2127,6 +2127,7 @@ try {
   // ---------- charts ----------
   function buildBarChartXml(spec) {
     var catRef = spec.sheetName + '!$' + spec.catCol + '$' + spec.catRowStart + ':$' + spec.catCol + '$' + spec.catRowEnd;
+    var numCacheXml = spec.valueNumFmt ? '<c:numCache><c:formatCode>' + xmlEscape(spec.valueNumFmt) + '</c:formatCode></c:numCache>' : '';
     var seriesXml = spec.series.map(function (s, i) {
       var valRef = spec.sheetName + '!$' + s.col + '$' + spec.catRowStart + ':$' + s.col + '$' + spec.catRowEnd;
       return '' +
@@ -2136,9 +2137,10 @@ try {
         '<c:tx><c:v>' + xmlEscape(s.name) + '</c:v></c:tx>' +
         (s.color ? '<c:spPr><a:solidFill><a:srgbClr val="' + s.color + '"/></a:solidFill></c:spPr>' : '') +
         '<c:cat><c:strRef><c:f>' + xmlEscape(catRef) + '</c:f></c:strRef></c:cat>' +
-        '<c:val><c:numRef><c:f>' + xmlEscape(valRef) + '</c:f></c:numRef></c:val>' +
+        '<c:val><c:numRef><c:f>' + xmlEscape(valRef) + '</c:f>' + numCacheXml + '</c:numRef></c:val>' +
         '</c:ser>';
     }).join('');
+    var valAxNumFmt = spec.valueNumFmt ? '<c:numFmt formatCode="' + xmlEscape(spec.valueNumFmt) + '" sourceLinked="0"/>' : '';
     var titleXml = spec.title
       ? '<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1100" b="1"/></a:pPr><a:r><a:rPr lang="ko-KR" sz="1100" b="1"/><a:t>' + xmlEscape(spec.title) + '</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>'
       : '<c:autoTitleDeleted val="1"/>';
@@ -2157,7 +2159,7 @@ try {
       '<c:axId val="222222222"/>' +
       '</c:barChart>' +
       '<c:catAx><c:axId val="111111111"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:txPr><a:bodyPr rot="-2700000" vert="horz"/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="800"/></a:pPr><a:endParaRPr lang="ko-KR"/></a:p></c:txPr><c:crossAx val="222222222"/></c:catAx>' +
-      '<c:valAx><c:axId val="222222222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/><c:crossAx val="111111111"/></c:valAx>' +
+      '<c:valAx><c:axId val="222222222"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines/>' + valAxNumFmt + '<c:crossAx val="111111111"/></c:valAx>' +
       '</c:plotArea>' +
       '<c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>' +
       '<c:plotVisOnly val="1"/>' +
@@ -2311,14 +2313,16 @@ try {
     var catCol = colIndexToLetter(col);
     var series = seriesKeys.map(function (key, i) {
       var idxInCols = cols.findIndex(function (c) { return c.key === key; });
-      return { name: cols[idxInCols].label, col: colIndexToLetter(col + idxInCols), color: seriesColors[i] };
+      return { name: cols[idxInCols].label, col: colIndexToLetter(col + idxInCols), color: seriesColors[i], unit: cols[idxInCols].unit };
     });
+    var valueNumFmt = series.length && series.every(function (s) { return s.unit === 'percent'; }) ? '0.0%' : null;
     var chartFromRow = tableInfo.nextRow - 1;
     return {
       spec: {
         title: title, sheetName: sheetNameForRefs, catCol: catCol,
         catRowStart: tableInfo.firstDataRow, catRowEnd: tableInfo.lastDataRow,
-        series: series, fromCol: col, fromRow: chartFromRow, toCol: col + 6, toRow: chartFromRow + 15
+        series: series, fromCol: col, fromRow: chartFromRow, toCol: col + 6, toRow: chartFromRow + 15,
+        valueNumFmt: valueNumFmt
       },
       nextRow: chartFromRow + 17
     };
@@ -2455,7 +2459,7 @@ try {
     var r2 = writeStatsBlock(b2, 1, rightCol2, '전체 성적', lukaRaw);
     var mTable2 = writeMonthlyTable(b2, r2, rightCol2, '월별 성적 비교', lukaMonthly, lukaMonthlyCols);
     var chartSpecs2 = [];
-    var cr2 = buildMonthlySectionChartSpec(mTable2, '월별 성적 비교', rightCol2, lukaMonthlyCols, ['netIn', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(LUKA_SHEET_NAME));
+    var cr2 = buildMonthlySectionChartSpec(mTable2, '월별 성적 비교', rightCol2, lukaMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(LUKA_SHEET_NAME));
     if (cr2) chartSpecs2.push(cr2.spec);
     for (var wi2 = 0; wi2 < 6; wi2++) b2.setColWidth(rightCol2 + wi2, wi2 === 0 ? 14 : 12);
 
@@ -2466,7 +2470,7 @@ try {
     var r3 = writeStatsBlock(b3, 1, rightCol3, '전체 성적', reshipRaw);
     var mTable3 = writeMonthlyTable(b3, r3, rightCol3, '월별 성적 비교', reshipMonthly, reshipMonthlyCols);
     var chartSpecs3 = [];
-    var cr3 = buildMonthlySectionChartSpec(mTable3, '월별 성적 비교', rightCol3, reshipMonthlyCols, ['in', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(RESHIP_SHEET_NAME));
+    var cr3 = buildMonthlySectionChartSpec(mTable3, '월별 성적 비교', rightCol3, reshipMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(RESHIP_SHEET_NAME));
     if (cr3) chartSpecs3.push(cr3.spec);
     for (var wi3 = 0; wi3 < 6; wi3++) b3.setColWidth(rightCol3 + wi3, wi3 === 0 ? 14 : 12);
 
@@ -2493,13 +2497,13 @@ try {
     row1 = writeStatsBlock(b1, row1, 0, '1. 후기자돈 전입현황 — 전체 성적', lukaRaw);
     var mTable1a = writeMonthlyTable(b1, row1, 0, '월별 성적 비교', lukaMonthly, lukaMonthlyCols);
     var chartSpecs1 = [];
-    var cr1a = buildMonthlySectionChartSpec(mTable1a, '후기자돈 전입현황 — 월별 성적 비교', 0, lukaMonthlyCols, ['netIn', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
+    var cr1a = buildMonthlySectionChartSpec(mTable1a, '후기자돈 전입현황 — 월별 성적 비교', 0, lukaMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
     row1 = cr1a ? cr1a.nextRow : mTable1a.nextRow;
     if (cr1a) chartSpecs1.push(cr1a.spec);
 
     row1 = writeStatsBlock(b1, row1, 0, '2. 재분양돈군 현황 — 전체 성적', reshipRaw);
     var mTable1b = writeMonthlyTable(b1, row1, 0, '월별 성적 비교', reshipMonthly, reshipMonthlyCols);
-    var cr1b = buildMonthlySectionChartSpec(mTable1b, '재분양돈군 현황 — 월별 성적 비교', 0, reshipMonthlyCols, ['in', 'death', 'shipped'], ['FCD535', 'F6465D', '0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
+    var cr1b = buildMonthlySectionChartSpec(mTable1b, '재분양돈군 현황 — 월별 성적 비교', 0, reshipMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
     row1 = cr1b ? cr1b.nextRow : mTable1b.nextRow;
     if (cr1b) chartSpecs1.push(cr1b.spec);
 
