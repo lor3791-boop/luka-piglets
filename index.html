@@ -2459,7 +2459,7 @@ try {
     var r2 = writeStatsBlock(b2, 1, rightCol2, '전체 성적', lukaRaw);
     var mTable2 = writeMonthlyTable(b2, r2, rightCol2, '월별 성적 비교', lukaMonthly, lukaMonthlyCols);
     var chartSpecs2 = [];
-    var cr2 = buildMonthlySectionChartSpec(mTable2, '월별 성적 비교', rightCol2, lukaMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(LUKA_SHEET_NAME));
+    var cr2 = buildMonthlySectionChartSpec(mTable2, '월별 성적 비교(육성율)', rightCol2, lukaMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(LUKA_SHEET_NAME));
     if (cr2) chartSpecs2.push(cr2.spec);
     for (var wi2 = 0; wi2 < 6; wi2++) b2.setColWidth(rightCol2 + wi2, wi2 === 0 ? 14 : 12);
 
@@ -2470,7 +2470,7 @@ try {
     var r3 = writeStatsBlock(b3, 1, rightCol3, '전체 성적', reshipRaw);
     var mTable3 = writeMonthlyTable(b3, r3, rightCol3, '월별 성적 비교', reshipMonthly, reshipMonthlyCols);
     var chartSpecs3 = [];
-    var cr3 = buildMonthlySectionChartSpec(mTable3, '월별 성적 비교', rightCol3, reshipMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(RESHIP_SHEET_NAME));
+    var cr3 = buildMonthlySectionChartSpec(mTable3, '월별 성적 비교(육성율)', rightCol3, reshipMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(RESHIP_SHEET_NAME));
     if (cr3) chartSpecs3.push(cr3.spec);
     for (var wi3 = 0; wi3 < 6; wi3++) b3.setColWidth(rightCol3 + wi3, wi3 === 0 ? 14 : 12);
 
@@ -2481,7 +2481,7 @@ try {
     var r4 = writeStatsBlock(b4, 1, rightCol4, '전체 성적', feedRaw);
     var mTable4 = writeMonthlyTable(b4, r4, rightCol4, '정산예정월별 사육비 비교', feedMonthly, feedMonthlyCols);
     var chartSpecs4 = [];
-    var cr4 = buildMonthlySectionChartSpec(mTable4, '정산예정월별 사육비 비교', rightCol4, feedMonthlyCols, ['amount'], ['FCD535'], quoteSheetName(FEED_SHEET_NAME));
+    var cr4 = buildMonthlySectionChartSpec(mTable4, '정산예정월별 사육비 비교(두당금액)', rightCol4, feedMonthlyCols, ['perHead'], ['FCD535'], quoteSheetName(FEED_SHEET_NAME));
     if (cr4) chartSpecs4.push(cr4.spec);
     for (var wi4 = 0; wi4 < 6; wi4++) b4.setColWidth(rightCol4 + wi4, wi4 === 0 ? 14 : 12);
 
@@ -2497,19 +2497,19 @@ try {
     row1 = writeStatsBlock(b1, row1, 0, '1. 후기자돈 전입현황 — 전체 성적', lukaRaw);
     var mTable1a = writeMonthlyTable(b1, row1, 0, '월별 성적 비교', lukaMonthly, lukaMonthlyCols);
     var chartSpecs1 = [];
-    var cr1a = buildMonthlySectionChartSpec(mTable1a, '후기자돈 전입현황 — 월별 성적 비교', 0, lukaMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
+    var cr1a = buildMonthlySectionChartSpec(mTable1a, '후기자돈 전입현황 — 월별 성적 비교(육성율)', 0, lukaMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
     row1 = cr1a ? cr1a.nextRow : mTable1a.nextRow;
     if (cr1a) chartSpecs1.push(cr1a.spec);
 
     row1 = writeStatsBlock(b1, row1, 0, '2. 재분양돈군 현황 — 전체 성적', reshipRaw);
     var mTable1b = writeMonthlyTable(b1, row1, 0, '월별 성적 비교', reshipMonthly, reshipMonthlyCols);
-    var cr1b = buildMonthlySectionChartSpec(mTable1b, '재분양돈군 현황 — 월별 성적 비교', 0, reshipMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
+    var cr1b = buildMonthlySectionChartSpec(mTable1b, '재분양돈군 현황 — 월별 성적 비교(육성율)', 0, reshipMonthlyCols, ['survivalRate'], ['0ECB81'], quoteSheetName(SUMMARY_SHEET_NAME));
     row1 = cr1b ? cr1b.nextRow : mTable1b.nextRow;
     if (cr1b) chartSpecs1.push(cr1b.spec);
 
     row1 = writeStatsBlock(b1, row1, 0, '3. 월대사육비 — 전체 성적', feedRaw);
     var mTable1c = writeMonthlyTable(b1, row1, 0, '정산예정월별 사육비 비교', feedMonthly, feedMonthlyCols);
-    var cr1c = buildMonthlySectionChartSpec(mTable1c, '정산예정월별 사육비 비교', 0, feedMonthlyCols, ['amount'], ['FCD535'], quoteSheetName(SUMMARY_SHEET_NAME));
+    var cr1c = buildMonthlySectionChartSpec(mTable1c, '정산예정월별 사육비 비교(두당금액)', 0, feedMonthlyCols, ['perHead'], ['FCD535'], quoteSheetName(SUMMARY_SHEET_NAME));
     row1 = cr1c ? cr1c.nextRow : mTable1c.nextRow;
     if (cr1c) chartSpecs1.push(cr1c.spec);
 
