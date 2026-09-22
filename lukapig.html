@@ -540,6 +540,18 @@
     records = records.filter(function (r) { return r.id !== id; });
     saveLocal(); render();
   }
+  async function updateRecordHead(id, head) {
+    var rec = records.find(function (r) { return r.id === id; });
+    if (!rec) return;
+    var updated = Object.assign({}, rec, { head: head });
+    delete updated.id;
+    if (db) {
+      try { await db.doc('records/' + id).set(updated); return; }
+      catch (e) { fallbackToLocal(); }
+    }
+    records = records.map(function (r) { return r.id === id ? Object.assign({}, r, { head: head }) : r; });
+    saveLocal(); render();
+  }
   async function replaceAllRecords(newRecords) {
     if (db) {
       try {
@@ -631,21 +643,41 @@
 
   // ---------- 전입전출 시뮬레이션 헬퍼 ----------
   function aggregateRecordsForDay(dms) {
-    var agg = { in: 0, out_farm: 0, out_external: 0 };
+    var agg = { in: 0, out_farm: 0, out_external: 0, out_farm_names: [], out_external_names: [] };
     records.forEach(function (r) {
       if (parseISO(r.date) !== dms) return;
-      if (r.type === 'in') agg.in += Number(r.head) || 0;
-      else if (r.subtype === 'farm') agg.out_farm += Number(r.head) || 0;
-      else agg.out_external += Number(r.head) || 0;
+      if (r.type === 'in') { agg.in += Number(r.head) || 0; return; }
+      if (r.subtype === 'farm') {
+        agg.out_farm += Number(r.head) || 0;
+        if (r.farmName && agg.out_farm_names.indexOf(r.farmName) === -1) agg.out_farm_names.push(r.farmName);
+      } else {
+        agg.out_external += Number(r.head) || 0;
+        if (r.farmName && agg.out_external_names.indexOf(r.farmName) === -1) agg.out_external_names.push(r.farmName);
+      }
     });
     return agg;
   }
   function simDayValue(iso) {
     var ov = simOverrides[iso];
-    if (ov) return { in: Number(ov.in) || 0, out_farm: Number(ov.out_farm) || 0, out_external: Number(ov.out_external) || 0 };
+    if (ov) {
+      return {
+        in: Number(ov.in) || 0, out_farm: Number(ov.out_farm) || 0, out_external: Number(ov.out_external) || 0,
+        out_farm_names: ov.out_farm_name ? [ov.out_farm_name] : [],
+        out_external_names: ov.out_external_name ? [ov.out_external_name] : []
+      };
+    }
     return aggregateRecordsForDay(parseISO(iso));
   }
   function simStockAsOf(queryMs) { return stockAsOf(queryMs, simOverrides); }
+  // 전출·외부판매 두수 입력 옆에 "가장 자주 쓰인 농장명"부터 나열해 선택할 수 있게 한다.
+  function farmNameFrequency(subtype) {
+    var counts = {};
+    records.forEach(function (r) {
+      if (r.type !== 'out' || r.subtype !== subtype || !r.farmName) return;
+      counts[r.farmName] = (counts[r.farmName] || 0) + 1;
+    });
+    return Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
+  }
 
   function weekAggregate(idx) {
     var wk = computeWeek(idx);
@@ -682,6 +714,13 @@
   function el(html) { var t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
 
   function render() {
+    // #view의 innerHTML을 통째로 갈아끼우면 스크롤 위치가 브라우저에 의해 초기화되므로
+    // (특히 모바일에서 팝업 안 삭제 버튼처럼 렌더를 두 번 연달아 부르는 동작에서 두드러짐),
+    // 페이지 스크롤과 모달 내부 스크롤을 기억했다가 다시 렌더링한 뒤 그대로 복원한다.
+    var modalPanelBefore = document.querySelector('.modal-panel');
+    var modalScrollTop = modalPanelBefore ? modalPanelBefore.scrollTop : null;
+    var pageScrollY = window.scrollY;
+
     document.querySelectorAll('.tab-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.tab === activeTab);
     });
@@ -692,6 +731,12 @@
     else view.innerHTML = renderDash();
     // 팝업이 열려 있는 동안은 뒷배경(body)이 스크롤되지 않도록 잠근다.
     document.body.classList.toggle('modal-open', !!(openEditModal || calDayEditISO || simDayEditISO));
+
+    if (modalScrollTop !== null) {
+      var modalPanelAfter = document.querySelector('.modal-panel');
+      if (modalPanelAfter) modalPanelAfter.scrollTop = modalScrollTop;
+    }
+    window.scrollTo(0, pageScrollY);
   }
 
   var KIND_LABELS = { in: '전입', out_farm: '전출', out_external: '외부판매' };
@@ -1406,7 +1451,8 @@
       var delCell = confirmingDeleteId === r.id
         ? '<button type="button" class="btn danger-outline" data-action="confirmDelete" data-id="' + r.id + '">확인 삭제</button> <button type="button" class="btn ghost small" data-action="cancelDelete">취소</button>'
         : '<button type="button" class="btn ghost small" data-action="askDelete" data-id="' + r.id + '">삭제</button>';
-      return '<tr><td class="left">' + badge + '</td><td class="left">' + (r.type === 'in' ? IN_FARM_NAME : (r.farmName || '')) + '</td><td class="mono">' + fmtNum(r.head) + '두</td><td class="left">' + delCell + '</td></tr>';
+      var headCell = '<input class="cell-input" type="number" min="1" value="' + r.head + '" style="width:76px;text-align:right" data-action="setRecordHead" data-id="' + r.id + '">';
+      return '<tr><td class="left">' + badge + '</td><td class="left">' + (r.type === 'in' ? IN_FARM_NAME : (r.farmName || '')) + '</td><td class="mono">' + headCell + '두</td><td class="left">' + delCell + '</td></tr>';
     }).join('');
     return '' +
       '<div class="modal-backdrop">' +
@@ -1444,10 +1490,12 @@
         var v = simDayValue(iso);
         var edited = !!simOverrides[iso];
         var cls = 'cal-day' + (outside ? ' outside' : '') + (dms === todayStamp ? ' today' : '') + (edited ? ' sim-edited' : '');
+        var farmNamesTxt = v.out_farm_names && v.out_farm_names.length ? '<span class="fname"> · ' + v.out_farm_names.join(', ') + '</span>' : '';
+        var extNamesTxt = v.out_external_names && v.out_external_names.length ? '<span class="fname"> · ' + v.out_external_names.join(', ') + '</span>' : '';
         var chips = '';
         if (v.in) chips += '<span class="cal-chip in">전입 +' + fmtNum(v.in) + '</span>';
-        if (v.out_farm) chips += '<span class="cal-chip farm">전출 -' + fmtNum(v.out_farm) + '</span>';
-        if (v.out_external) chips += '<span class="cal-chip ext">외부판매 -' + fmtNum(v.out_external) + '</span>';
+        if (v.out_farm) chips += '<span class="cal-chip farm">전출 -' + fmtNum(v.out_farm) + farmNamesTxt + '</span>';
+        if (v.out_external) chips += '<span class="cal-chip ext">외부판매 -' + fmtNum(v.out_external) + extNamesTxt + '</span>';
         var hasAny = v.in || v.out_farm || v.out_external;
         var stockLine = hasAny ? '<span class="cal-stock">재고 ' + fmtNum(simStockAsOf(dms)) + '두</span>' : '';
         rows += '<div class="' + cls + '" data-action="openSimDayEdit" data-date="' + iso + '"><span class="cal-daynum">' + dDate.getUTCDate() + '</span>' + chips + stockLine + '</div>';
@@ -1494,15 +1542,27 @@
     var dms = parseISO(iso);
     var v = simDayValue(iso);
     var hasOverride = !!simOverrides[iso];
+    var farmPrefill = (v.out_farm_names && v.out_farm_names.length === 1) ? v.out_farm_names[0] : '';
+    var extPrefill = (v.out_external_names && v.out_external_names.length === 1) ? v.out_external_names[0] : '';
+    var farmOptions = farmNameFrequency('farm').map(function (n) { return '<option value="' + n + '">'; }).join('');
+    var extOptions = farmNameFrequency('external').map(function (n) { return '<option value="' + n + '">'; }).join('');
     return '' +
       '<div class="modal-backdrop">' +
         '<div class="modal-panel" style="max-width:440px">' +
           '<div class="panel-head"><h3>' + fmtShort(dms) + ' 시뮬레이션</h3><button type="button" class="btn ghost small" data-action="closeSimDayEdit">닫기</button></div>' +
           '<div class="field-row">' +
             '<div class="field num"><label>전입두수</label><input type="number" min="0" id="simEditIn" value="' + v.in + '"></div>' +
-            '<div class="field num"><label>전출(농장)두수</label><input type="number" min="0" id="simEditOutFarm" value="' + v.out_farm + '"></div>' +
-            '<div class="field num"><label>외부판매두수</label><input type="number" min="0" id="simEditOutExt" value="' + v.out_external + '"></div>' +
           '</div>' +
+          '<div class="field-row" style="margin-top:10px">' +
+            '<div class="field num"><label>전출(농장)두수</label><input type="number" min="0" id="simEditOutFarm" value="' + v.out_farm + '"></div>' +
+            '<div class="field grow"><label>전출 농장명</label><input type="text" id="simEditOutFarmName" list="simFarmNameList" value="' + farmPrefill + '" placeholder="목록에서 선택하거나 직접 입력"></div>' +
+          '</div>' +
+          '<div class="field-row" style="margin-top:10px">' +
+            '<div class="field num"><label>외부판매두수</label><input type="number" min="0" id="simEditOutExt" value="' + v.out_external + '"></div>' +
+            '<div class="field grow"><label>판매처명</label><input type="text" id="simEditOutExtName" list="simExtNameList" value="' + extPrefill + '" placeholder="목록에서 선택하거나 직접 입력"></div>' +
+          '</div>' +
+          '<datalist id="simFarmNameList">' + farmOptions + '</datalist>' +
+          '<datalist id="simExtNameList">' + extOptions + '</datalist>' +
           '<div class="row" style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">' +
             '<button type="button" class="btn" data-action="applySimDayEdit" data-date="' + iso + '">적용</button>' +
             (hasOverride ? '<button type="button" class="btn ghost small" data-action="clearSimDayOverride" data-date="' + iso + '">실제값으로 되돌리기</button>' : '') +
@@ -3114,9 +3174,14 @@
     else if (action === 'applySimDayEdit') {
       var aIso = b.dataset.date;
       var inEl = document.getElementById('simEditIn'), outFEl = document.getElementById('simEditOutFarm'), outEEl = document.getElementById('simEditOutExt');
+      var outFNameEl = document.getElementById('simEditOutFarmName'), outENameEl = document.getElementById('simEditOutExtName');
       var inV = Number(inEl && inEl.value) || 0, outF = Number(outFEl && outFEl.value) || 0, outE = Number(outEEl && outEEl.value) || 0;
       var ov3 = Object.assign({}, simOverrides);
-      ov3[aIso] = { in: inV, out_farm: outF, out_external: outE };
+      ov3[aIso] = {
+        in: inV, out_farm: outF, out_external: outE,
+        out_farm_name: (outFNameEl && outFNameEl.value.trim()) || '',
+        out_external_name: (outENameEl && outENameEl.value.trim()) || ''
+      };
       simOverrides = ov3;
       simDayEditISO = null;
       render();
@@ -3235,6 +3300,10 @@
     else if (action === 'setReshipMonthFilter') { reshipFilterMonth = t.value; render(); }
     else if (action === 'setReshipFarmFilter') { reshipFilterFarm = t.value; render(); }
     else if (action === 'setSimSaveName') { simSaveNameDraft = t.value; render(); }
+    else if (action === 'setRecordHead') {
+      var newHead = Number(t.value) || 0;
+      if (newHead > 0) updateRecordHead(t.dataset.id, newHead);
+    }
     else if (action === 'toggleBulkCheck') {
       var tbTab = t.dataset.tab, tbIdx = Number(t.dataset.row);
       var tbSet = Object.assign({}, statusBulkChecked[tbTab]);
