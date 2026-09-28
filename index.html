@@ -145,9 +145,16 @@
   .sync-pill {
     font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;
     padding: 5px 10px; border-radius: var(--radius-full); background: var(--surface-2);
+    transition: background .15s, color .15s;
   }
+  .sync-pill.warn { background: var(--danger-soft); color: var(--danger); font-weight: 700; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex: none; }
   .dot.off { background: var(--text-faint); }
+  .sync-pill.warn .dot.off { background: var(--danger); }
+  .sync-retry-btn {
+    border: none; background: transparent; color: inherit; text-decoration: underline; cursor: pointer;
+    font-size: 12px; font-weight: 700; padding: 0; margin-left: 2px; touch-action: manipulation;
+  }
 
   /* cards */
   .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 22px; }
@@ -587,35 +594,61 @@ try {
   }
 
   function setSyncStatus(mode) {
+    var pill = document.getElementById('syncPill');
     var dot = document.getElementById('syncDot');
     var text = document.getElementById('syncText');
     if (!dot) return;
-    if (mode === 'live') { dot.className = 'dot'; text.textContent = '실시간 동기화'; }
-    else if (mode === 'local') { dot.className = 'dot off'; text.textContent = '이 브라우저에만 저장(공유 불가) — 서버 연결 실패'; }
-    else { dot.className = 'dot off'; text.textContent = '연결 중…'; }
+    if (mode === 'live') {
+      if (pill) pill.classList.remove('warn');
+      dot.className = 'dot'; text.textContent = '실시간 동기화';
+    } else if (mode === 'local') {
+      if (pill) pill.classList.add('warn');
+      dot.className = 'dot off';
+      text.innerHTML = '이 브라우저에만 저장(공유 불가) — 서버 연결 실패 ' +
+        '<button type="button" class="sync-retry-btn" data-action="retryConnect">다시 시도</button>';
+    } else {
+      if (pill) pill.classList.remove('warn');
+      dot.className = 'dot off'; text.textContent = '연결 중…';
+    }
   }
 
-  // Firestore가 응답하지 않을 때(프로젝트 미설정, 네트워크 차단 등) 데이터가
-  // 통째로 사라지지 않도록 이 브라우저의 localStorage 저장으로 전환한다.
+  // Firestore가 응답하지 않을 때(보안 규칙 만료, 네트워크 차단 등) 데이터가
+  // 통째로 사라지지 않도록 이 브라우저의 localStorage 저장으로 전환하고,
+  // 연결이 복구되면 자동으로 다시 붙도록 주기적으로 재시도한다.
+  var reconnectTimer = null;
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setInterval(function () {
+      if (!useLocal) { clearInterval(reconnectTimer); reconnectTimer = null; return; }
+      initStore();
+    }, 60000);
+  }
   function fallbackToLocal() {
     if (useLocal) return;
     useLocal = true;
     db = null;
     setSyncStatus('local');
+    scheduleReconnect();
   }
 
+  var unsubSettings = null, unsubRecords = null;
   async function initStore() {
+    if (unsubSettings) { try { unsubSettings(); } catch (e) {} unsubSettings = null; }
+    if (unsubRecords) { try { unsubRecords(); } catch (e) {} unsubRecords = null; }
     db = dbAdapter;
     if (!db) {
       useLocal = true;
       loadLocal();
       setSyncStatus('local');
       render();
+      scheduleReconnect();
       return;
     }
     setSyncStatus('live');
     var settingsRef = db.doc('settings/main');
-    settingsRef.onSnapshot(function (snap) {
+    unsubSettings = settingsRef.onSnapshot(function (snap) {
+      useLocal = false;
+      if (reconnectTimer) { clearInterval(reconnectTimer); reconnectTimer = null; }
       if (snap.exists) {
         settings = Object.assign(defaultSettings(), snap.data());
       } else {
@@ -623,13 +656,21 @@ try {
         settingsRef.set(settings).catch(function () {});
       }
       render();
-    }, function () { fallbackToLocal(); loadLocal(); render(); });
+    }, function (err) {
+      console.error('[Firestore] settings 구독 실패 — Firebase 콘솔의 Firestore 보안 규칙(만료 여부 포함)을 확인하세요:', err);
+      fallbackToLocal(); loadLocal(); render();
+    });
 
     var recordsRef = db.collection('records').orderBy('date', 'asc').limit(1000);
-    recordsRef.onSnapshot(function (snap) {
+    unsubRecords = recordsRef.onSnapshot(function (snap) {
+      useLocal = false;
+      if (reconnectTimer) { clearInterval(reconnectTimer); reconnectTimer = null; }
       records = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
       render();
-    }, function () { fallbackToLocal(); loadLocal(); render(); });
+    }, function (err) {
+      console.error('[Firestore] records 구독 실패 — Firebase 콘솔의 Firestore 보안 규칙(만료 여부 포함)을 확인하세요:', err);
+      fallbackToLocal(); loadLocal(); render();
+    });
   }
 
   async function addRecord(rec) {
@@ -3217,6 +3258,7 @@ try {
   function runAction(b) {
     var action = b.dataset.action;
     if (action === 'setTab') { activeTab = b.dataset.tab; render(); }
+    else if (action === 'retryConnect') { setSyncStatus('connecting'); initStore(); }
     else if (action === 'openEditStatusModal') { openEditModal = b.dataset.tab; render(); }
     else if (action === 'closeEditModal') {
       statusBulkMode[openEditModal] = false; statusBulkChecked[openEditModal] = {}; statusBulkConfirming[openEditModal] = false;
