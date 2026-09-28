@@ -584,10 +584,9 @@
   async function updateRecordHead(id, head) {
     var rec = records.find(function (r) { return r.id === id; });
     if (!rec) return;
-    var updated = Object.assign({}, rec, { head: head });
-    delete updated.id;
     if (db) {
-      try { await db.doc('records/' + id).set(updated); return; }
+      // head 필드만 병합 저장 — 로컬의 다른 필드가 최신이 아니어도 그 필드는 건드리지 않는다.
+      try { await db.doc('records/' + id).update({ head: head }); return; }
       catch (e) { fallbackToLocal(); }
     }
     records = records.map(function (r) { return r.id === id ? Object.assign({}, r, { head: head }) : r; });
@@ -610,7 +609,11 @@
   async function saveSettings(patch) {
     settings = Object.assign({}, settings, patch);
     if (db) {
-      try { await db.doc('settings/main').set(settings); return; }
+      // patch만 병합 저장한다 — 재접속 직후처럼 로컬의 settings가 아직 최신 값을
+      // 못 받아온 순간에 저장해도, 전체를 덮어써서 다른 필드(예: lukaStatusRows 등)를
+      // 지워버리지 않도록 하기 위함. update()는 문서가 이미 있어야 하므로(최초 1회는
+      // initStore에서 만들어 둠) 실패하면 안전하게 로컬 저장으로만 전환한다.
+      try { await db.doc('settings/main').update(patch); return; }
       catch (e) { fallbackToLocal(); }
     }
     saveLocal(); render();

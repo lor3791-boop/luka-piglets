@@ -440,7 +440,7 @@ try {
     return {
       id: ref.id,
       get: function () { return getDoc(ref).then(wrapDocSnap); },
-      set: function (data) { return setDoc(ref, data); },
+      set: function (data, opts) { return setDoc(ref, data, opts); },
       delete: function () { return deleteDoc(ref); },
       onSnapshot: function (next, err) { return onSnapshot(ref, function (s) { next(wrapDocSnap(s)); }, err); }
     };
@@ -693,10 +693,9 @@ try {
   async function updateRecordHead(id, head) {
     var rec = records.find(function (r) { return r.id === id; });
     if (!rec) return;
-    var updated = Object.assign({}, rec, { head: head });
-    delete updated.id;
     if (db) {
-      try { await db.doc('records/' + id).set(updated); return; }
+      // head 필드만 병합 저장 — 로컬의 다른 필드가 최신이 아니어도 그 필드는 건드리지 않는다.
+      try { await db.doc('records/' + id).set({ head: head }, { merge: true }); return; }
       catch (e) { fallbackToLocal(); }
     }
     records = records.map(function (r) { return r.id === id ? Object.assign({}, r, { head: head }) : r; });
@@ -719,7 +718,10 @@ try {
   async function saveSettings(patch) {
     settings = Object.assign({}, settings, patch);
     if (db) {
-      try { await db.doc('settings/main').set(settings); return; }
+      // patch만 병합 저장한다(merge:true) — 재접속 직후처럼 로컬의 settings가 아직
+      // 클라우드의 최신 값을 못 받아온 순간에 저장해도, 전체를 덮어써서 다른 필드
+      // (예: lukaStatusRows 등)를 지워버리지 않도록 하기 위함.
+      try { await db.doc('settings/main').set(patch, { merge: true }); return; }
       catch (e) { fallbackToLocal(); }
     }
     saveLocal(); render();
