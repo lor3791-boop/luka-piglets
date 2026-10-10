@@ -248,7 +248,10 @@ async function loadFarms() {
     const j = await api({ action: 'farms' });
     if (!j.ok) throw new Error(j.error);
     state.farms = j.farms; store.set('farms', j.farms); renderFarms();
-  } catch (e) { if (!state.farms.length) $('farms').innerHTML = '<div class="empty">농장 목록을 못 불러왔습니다. 인터넷 연결을 확인하세요.</div>'; }
+  } catch (e) {
+    if (!state.farms.length) $('farms').innerHTML = '<div class="empty">농장 목록을 못 불러왔습니다.<br>원인: ' +
+      String(e.message || e).replace(/[<>&]/g, '') + '</div>';
+  }
 }
 async function loadRecent() {
   try {
