@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>폐사 입력</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1F4E3D">
+<style>
+  :root {
+    --bg: #F4EFE6; --card: #FFFDF8; --ink: #1E2420; --muted: #6B7069; --line: #E2DACB;
+    --green: #1F4E3D; --green-2: #2E6B55; --orange: #E07A3F; --danger: #B3402A; --ok: #2E7D4F;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif; font-size: 16px; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--green); color: #F4EBD0;
+    padding: calc(env(safe-area-inset-top) + 12px) 16px 12px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { margin: 0; font-size: 19px; letter-spacing: -0.3px; }
+  header .sub { font-size: 12px; opacity: .8; }
+  main { padding: 12px 16px 120px; max-width: 560px; margin: 0 auto; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  h2 { font-size: 13px; color: var(--muted); font-weight: 600; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; }
+  .photos { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+  .ph { position: relative; flex: 0 0 auto; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; background: #ddd; }
+  .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .ph button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 12px; border: 0;
+    background: rgba(0,0,0,.6); color: #fff; font-size: 14px; line-height: 24px; padding: 0; }
+  .addph { flex: 0 0 auto; width: 84px; height: 84px; border-radius: 10px; border: 2px dashed var(--line);
+    display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; text-align: center; }
+  .empty { color: var(--muted); font-size: 14px; }
+  input[type=date] { font: inherit; font-size: 17px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; width: 100%; }
+  .farms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .farm { font: inherit; font-size: 15px; padding: 14px 4px; border-radius: 10px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); word-break: keep-all; }
+  .farm.on { background: var(--green); color: #fff; border-color: var(--green); font-weight: 700; }
+  .farm.recent { border-color: var(--green-2); }
+  .more { margin-top: 8px; width: 100%; font: inherit; font-size: 14px; padding: 10px; border: 0; background: transparent; color: var(--green-2); }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .dong { display: flex; align-items: center; gap: 6px; }
+  .dong input { width: 72px; font: inherit; font-size: 20px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
+  .dong span { font-size: 16px; color: var(--muted); }
+  .step { display: flex; align-items: center; gap: 4px; }
+  .step button { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font-size: 22px; color: var(--green); }
+  .step input { width: 56px; font: inherit; font-size: 22px; font-weight: 700; text-align: center; border: 0; background: transparent; }
+  .rm { border: 0; background: transparent; color: var(--danger); font-size: 13px; padding: 4px 0 0; }
+  .addrow { width: 100%; margin-top: 8px; font: inherit; font-size: 15px; padding: 12px; border-radius: 10px; border: 1px dashed var(--green-2); background: transparent; color: var(--green-2); }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line);
+    padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px); z-index: 5; }
+  .bar .in { max-width: 560px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+  .sum { flex: 1; font-size: 14px; color: var(--muted); line-height: 1.3; }
+  .sum b { color: var(--ink); font-size: 18px; }
+  .save { font: inherit; font-size: 18px; font-weight: 700; padding: 14px 24px; border-radius: 12px; border: 0; background: var(--orange); color: #fff; }
+  .save:disabled { background: #C9C2B5; }
+  .toast { position: fixed; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 86px); max-width: 528px; margin: 0 auto;
+    padding: 14px 16px; border-radius: 12px; color: #fff; font-size: 15px; z-index: 9; display: none; }
+  .toast.ok { background: var(--ok); } .toast.err { background: var(--danger); } .toast.show { display: block; }
+  .recent li { font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--line); list-style: none; display: flex; justify-content: space-between; }
+  .recent ul { margin: 0; padding: 0; }
+  .pending { background: #FFF1E6; border-color: #F2C6A6; font-size: 14px; }
+  .setup { text-align: center; padding: 40px 16px; color: var(--muted); line-height: 1.6; }
+  .busy { position: fixed; inset: 0; background: rgba(244,239,230,.75); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 16px; }
+  .busy.show { display: flex; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>폐사 입력</h1><div class="sub" id="who">비육계열3팀</div></div>
+  <div class="sub" id="net"></div>
+</header>
+
+<main id="app">
+  <div class="setup" id="setup" hidden>
+    처음 한 번은 <b>설정 링크</b>로 열어야 합니다.<br>Claude가 보내 드린 링크를 폰에서 눌러 주세요.
+  </div>
+
+  <div id="form" hidden>
+    <section id="pendingBox" class="pending" hidden></section>
+
+    <section>
+      <h2>사진 <span id="phCount"></span></h2>
+      <div class="photos" id="photos">
+        <label class="addph">+ 사진<br>추가<input type="file" id="pick" accept="image/*" multiple hidden></label>
+      </div>
+    </section>
+
+    <section>
+      <h2>날짜</h2>
+      <input type="date" id="date">
+    </section>
+
+    <section>
+      <h2>농장 <span id="farmPicked"></span></h2>
+      <div class="farms" id="farms"></div>
+      <button class="more" id="more" hidden>전체 농장 보기</button>
+    </section>
+
+    <section>
+      <h2>동 · 두수 <span>한 사진에 여러 동이면 줄을 추가</span></h2>
+      <div id="rows"></div>
+      <button class="addrow" id="addrow">+ 동 추가</button>
+    </section>
+
+    <section class="recent">
+      <h2>최근 입력 <a href="#" id="reload" style="color:var(--green-2);font-weight:400">새로고침</a></h2>
+      <ul id="recent"><li class="empty">불러오는 중…</li></ul>
+    </section>
+  </div>
+</main>
+
+<div class="bar" id="bar" hidden>
+  <div class="in">
+    <div class="sum" id="sum">농장을 고르고 두수를 넣으세요</div>
+    <button class="save" id="save" disabled>저장</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="busy" id="busy">저장 중…</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwmyNqtik9FKDVG2TdNiJxkYDlmX7qIvXm_kcH0Tx_gNc8M56LAfNipZVMWjptc5x3KtQ/exec';
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+// 접속 키: 설정 링크(#k=...)로 한 번 열면 저장
+(() => {
+  const m = location.hash.match(/k=([\w-]+)/);
+  if (m) { store.set('key', m[1]); history.replaceState(null, '', location.pathname + location.search); }
+})();
+const KEY = store.get('key', '');
+
+const state = { photos: [], farm: '', rows: [{ dong: '', count: 1 }], farms: store.get('farms', []), showAll: false };
+const today = () => { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 10); };
+
+function toast(msg, ok = true) {
+  const t = $('toast'); t.textContent = msg; t.className = 'toast show ' + (ok ? 'ok' : 'err');
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = 'toast', ok ? 2500 : 5000);
+}
+
+// ---------- 사진 ----------
+function renderPhotos() {
+  const box = $('photos');
+  [...box.querySelectorAll('.ph')].forEach(n => n.remove());
+  state.photos.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'ph';
+    d.innerHTML = `<img src="${p.url}" alt=""><button aria-label="사진 빼기">×</button>`;
+    d.querySelector('button').onclick = () => { URL.revokeObjectURL(p.url); state.photos.splice(i, 1); renderPhotos(); };
+    box.insertBefore(d, box.lastElementChild);
+  });
+  $('phCount').textContent = state.photos.length ? state.photos.length + '장' : '';
+}
+function addFiles(files) {
+  [...files].filter(f => f.type.startsWith('image/')).forEach(f => state.photos.push({ file: f, url: URL.createObjectURL(f) }));
+  renderPhotos();
+}
+$('pick').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+
+async function loadShared() {
+  if (!('caches' in window)) return;
+  const cache = await caches.open('pyesa-share');
+  const keys = await cache.keys();
+  for (const req of keys) {
+    const res = await cache.match(req);
+    const blob = await res.blob();
+    state.photos.push({ file: new File([blob], 'shared.jpg', { type: blob.type || 'image/jpeg' }), url: URL.createObjectURL(blob) });
+    await cache.delete(req);
+  }
+  if (keys.length) { renderPhotos(); history.replaceState(null, '', location.pathname); }
+}
+
+// 큰 사진은 긴 변 1600px JPEG로 줄여서 전송 (속도·용량)
+async function shrink(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { bmp = await createImageBitmap(file); }
+  const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return { mime: 'image/jpeg', data: btoa(bin) };
+}
+
+// ---------- 농장 ----------
+function recentFarms() { return store.get('recentFarms', []); }
+function renderFarms() {
+  const rec = recentFarms().filter(f => state.farms.includes(f));
+  const rest = state.farms.filter(f => !rec.includes(f));
+  const list = state.showAll || rec.length < 3 ? rec.concat(rest) : rec.slice(0, 9);
+  const box = $('farms'); box.innerHTML = '';
+  list.forEach(f => {
+    const b = document.createElement('button');
+    b.className = 'farm' + (f === state.farm ? ' on' : '') + (rec.includes(f) ? ' recent' : '');
+    b.textContent = f.replace(/농장$|농원$/, '');
+    b.onclick = () => { state.farm = f; renderFarms(); update(); };
+    box.appendChild(b);
+  });
+  $('more').hidden = state.showAll || list.length >= state.farms.length;
+  $('farmPicked').textContent = state.farm;
+  if (!state.farms.length) box.innerHTML = '<div class="empty">농장 목록을 불러오는 중…</div>';
+}
+$('more').onclick = () => { state.showAll = true; renderFarms(); };
+
+// ---------- 동·두수 ----------
+function renderRows() {
+  const box = $('rows'); box.innerHTML = '';
+  state.rows.forEach((r, i) => {
+    const d = document.createElement('div'); d.className = 'row';
+    d.innerHTML = `
+      <div><div class="dong"><input inputmode="numeric" placeholder="동" value="${r.dong}"><span>동</span></div>
+        ${state.rows.length > 1 ? '<button class="rm">이 줄 빼기</button>' : ''}</div>
+      <div class="step"><button aria-label="한 마리 빼기">−</button><input inputmode="numeric" value="${r.count}"><button aria-label="한 마리 더하기">+</button></div>`;
+    const [dong, cnt] = d.querySelectorAll('input');
+    const [minus, plus] = d.querySelectorAll('.step button');
+    dong.oninput = () => { r.dong = dong.value.replace(/동$/, '').trim(); update(); };
+    cnt.oninput = () => { r.count = Math.max(0, parseInt(cnt.value, 10) || 0); update(); };
+    minus.onclick = () => { r.count = Math.max(0, r.count - 1); cnt.value = r.count; update(); };
+    plus.onclick = () => { r.count += 1; cnt.value = r.count; update(); };
+    const rm = d.querySelector('.rm'); if (rm) rm.onclick = () => { state.rows.splice(i, 1); renderRows(); update(); };
+    box.appendChild(d);
+  });
+}
+$('addrow').onclick = () => { state.rows.push({ dong: '', count: 1 }); renderRows(); update(); setTimeout(() => { const ins = $('rows').querySelectorAll('.dong input'); ins[ins.length - 1].focus(); }, 50); };
+
+function update() {
+  const rows = state.rows.filter(r => r.count > 0);
+  const total = rows.reduce((a, r) => a + r.count, 0);
+  const missingDong = rows.some(r => !r.dong);
+  $('sum').innerHTML = state.farm
+    ? `${state.farm.replace(/농장$/, '')} · <b>${total}두</b>${missingDong ? '<br>동 번호를 넣어 주세요' : ''}`
+    : '농장을 고르고 두수를 넣으세요';
+  $('save').disabled = !state.farm || !total || missingDong;
+}
+
+// ---------- 서버 ----------
+async function api(params) {
+  const r = await fetch(API + '?' + new URLSearchParams({ key: KEY, ...params }));
+  return r.json();
+}
+async function loadFarms() {
+  try {
+    const j = await api({ action: 'farms' });
+    if (!j.ok) throw new Error(j.error);
+    state.farms = j.farms; store.set('farms', j.farms); renderFarms();
+  } catch (e) { if (!state.farms.length) $('farms').innerHTML = '<div class="empty">농장 목록을 못 불러왔습니다. 인터넷 연결을 확인하세요.</div>'; }
+}
+async function loadRecent() {
+  try {
+    const j = await api({ action: 'recent', n: 10 });
+    if (!j.ok) throw new Error(j.error);
+    $('recent').innerHTML = j.rows.length
+      ? j.rows.map(r => `<li><span>${r[0].slice(5)} ${r[1].replace(/농장$/, '')} ${r[2] ? r[2] + '동' : ''}</span><b>${r[3]}두</b></li>`).join('')
+      : '<li class="empty">아직 입력한 기록이 없습니다</li>';
+  } catch (e) { $('recent').innerHTML = '<li class="empty">최근 기록을 못 불러왔습니다</li>'; }
+}
+$('reload').onclick = e => { e.preventDefault(); loadRecent(); };
+
+async function post(payload) {
+  const r = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+  const j = await r.json();
+  if (!j.ok) throw Object.assign(new Error(j.error || '저장 실패'), { server: true });
+  return j;
+}
+
+// 신호가 없을 때: 폰에 보관했다가 다음에 앱을 열거나 인터넷이 돌아오면 다시 보냄
+async function queue(payload) {
+  const c = await caches.open('pyesa-pending');
+  await c.put('./pending/' + Date.now(), new Response(JSON.stringify(payload)));
+}
+async function flushPending() {
+  if (!('caches' in window)) return;
+  const c = await caches.open('pyesa-pending');
+  const keys = await c.keys();
+  const box = $('pendingBox');
+  if (!keys.length) { box.hidden = true; return; }
+  box.hidden = false; box.textContent = `전송 대기 ${keys.length}건 — 보내는 중…`;
+  let sent = 0;
+  for (const k of keys) {
+    try { await post(await (await c.match(k)).json()); await c.delete(k); sent++; } catch (e) { if (e.server) { await c.delete(k); } }
+  }
+  const left = (await c.keys()).length;
+  box.hidden = !left; box.textContent = `전송 대기 ${left}건 — 인터넷이 연결되면 자동으로 보냅니다`;
+  if (sent) { toast(`대기 중이던 ${sent}건 저장 완료`); loadRecent(); }
+}
+window.addEventListener('online', flushPending);
+
+$('save').onclick = async () => {
+  $('busy').classList.add('show');
+  const farm = state.farm;
+  try {
+    const photos = [];
+    for (const p of state.photos) photos.push(await shrink(p.file));
+    const payload = { key: KEY, farm, date: $('date').value || today(), rows: state.rows.filter(r => r.count > 0), photos };
+    try {
+      const j = await post(payload);
+      toast(`${farm} ${j.total}두 저장 완료 (사진 ${j.photos}장)`);
+    } catch (e) {
+      if (e.server) throw e;
+      await queue(payload);
+      toast('인터넷이 안 돼서 폰에 보관했습니다. 연결되면 자동으로 보냅니다', false);
+    }
+    const rec = [farm].concat(recentFarms().filter(f => f !== farm)).slice(0, 9); store.set('recentFarms', rec);
+    state.photos.forEach(p => URL.revokeObjectURL(p.url));
+    Object.assign(state, { photos: [], farm: '', rows: [{ dong: '', count: 1 }], showAll: false });
+    renderPhotos(); renderFarms(); renderRows(); update(); loadRecent(); flushPending();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    toast('저장 실패: ' + e.message, false);
+  } finally { $('busy').classList.remove('show'); }
+};
+
+// ---------- 시작 ----------
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if (!KEY) { $('setup').hidden = false; }
+else {
+  $('form').hidden = false; $('bar').hidden = false;
+  $('date').value = today();
+  renderPhotos(); renderFarms(); renderRows(); update();
+  loadShared(); loadFarms(); loadRecent(); flushPending();
+  $('net').textContent = navigator.onLine ? '' : '오프라인';
+  window.addEventListener('offline', () => $('net').textContent = '오프라인');
+  window.addEventListener('online', () => $('net').textContent = '');
+}
+</script>
+</body>
+</html>
