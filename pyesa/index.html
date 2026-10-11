@@ -85,6 +85,35 @@
   .card.done .chk { background: var(--green); color: #fff; }
   .allok { text-align: center; padding: 36px 10px; color: var(--ok); font-size: 17px; font-weight: 700; }
   .subh { font-size: 13px; color: var(--muted); margin: 22px 2px 6px; }
+  .tabs button { font-size: 14px; padding: 10px 2px; }
+  .heat { margin-left: 8px; font: inherit; font-size: 13px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
+  .heat.on { background: #D9572B; border-color: #D9572B; color: #fff; font-weight: 700; }
+  .htag { font-size: 11px; font-weight: 700; color: #fff; background: #D9572B; border-radius: 5px; padding: 0 5px; margin-left: 4px; }
+  .seg { display: flex; gap: 6px; margin: 0 0 4px; }
+  .seg button { flex: 1; font: inherit; font-size: 13px; padding: 8px; border-radius: 9px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
+  .seg button.on { border-color: var(--green); color: var(--green); font-weight: 700; background: #EAF2EE; }
+  .alert { background: #FFF1E6; border: 1px solid #F2C6A6; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; font-size: 14px; line-height: 1.6; }
+  .alert b { color: var(--danger); }
+  .sm { font-size: 12px; color: var(--muted); }
+  .code { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; }
+  .stat h3 { margin: 0 0 6px; font-size: 16px; }
+  .stat table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .stat td { padding: 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  .stat td.r { text-align: right; white-space: nowrap; padding-left: 8px; }
+  .stat .rate { font-size: 17px; font-weight: 700; color: var(--ok); }
+  .stat .rate.bad { color: var(--danger); }
+  .set label { display: block; padding: 10px 0; border-top: 1px solid var(--line); }
+  .set h2 + label { border-top: 0; }
+  .set .lt { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
+  .set .hp { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .set select, .set input[type=number], .set input[type=date], .set input[type=text] { font: inherit; font-size: 15px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; max-width: 150px; }
+  .set input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--green); }
+  .btn { font: inherit; font-size: 15px; padding: 11px 14px; border-radius: 10px; border: 1px solid var(--green); background: #fff; color: var(--green); margin: 4px 6px 4px 0; }
+  .btn.pri { background: var(--green); color: #fff; }
+  .kstat { font-size: 14px; line-height: 1.6; }
+  .kstat .err { color: var(--danger); font-size: 13px; word-break: break-all; }
+  a.lnk { color: var(--green-2); font-size: 14px; display: inline-block; margin: 8px 14px 0 0; }
 </style>
 </head>
 <body>
@@ -93,8 +122,10 @@
   <div class="sub" id="net"></div>
 </header>
 <nav class="tabs" id="tabs" hidden>
-  <button data-v="form" class="on">폐사 입력</button>
-  <button data-v="check">피그온 미등록<b id="pendN"></b></button>
+  <button data-v="form" class="on">입력</button>
+  <button data-v="check">미등록<b id="pendN"></b></button>
+  <button data-v="stats">육성율<b id="alertN"></b></button>
+  <button data-v="settings">설정</button>
 </nav>
 
 <main id="app">
@@ -136,9 +167,26 @@
   </div>
 
   <div id="check" hidden>
+    <div id="alertBox"></div>
+    <div class="seg" id="sortSeg"><button data-s="피그온순">피그온 순서 (농장별)</button><button data-s="날짜순">날짜순</button></div>
     <p class="hint">피그온에 등록한 건은 <b>등록완료</b>를 누르세요. 안 누른 건은 다음 날 아침 카톡으로 다시 알려 드립니다.</p>
     <div id="pendList"><div class="empty">불러오는 중…</div></div>
     <div id="doneWrap" hidden><div class="subh">오늘 체크한 것 (잘못 눌렀으면 다시 누르면 취소)</div><div id="doneList"></div></div>
+  </div>
+
+  <div id="stats" hidden>
+    <p class="hint">그룹별 육성율 = (전입두수 − 누적폐사) ÷ 전입두수. '폭염 포함'은 폭염폐사를 인정해 더한 값입니다. 전입 정보는 설정 → 농장기준 시트에서 넣습니다.</p>
+    <div id="statList"><div class="empty">불러오는 중…</div></div>
+  </div>
+
+  <div id="settings" hidden>
+    <section><h2>카카오톡 알림</h2><div id="kakaoBox" class="kstat">불러오는 중…</div></section>
+    <div id="setForm" class="set"></div>
+    <section><h2>기준표</h2>
+      <div class="sm" style="line-height:1.5">농장기준 시트에 그룹별 전입일·전입두수를 넣으면 육성율 경고가 작동합니다. 빈 농장(출하 완료 등)은 사용=N으로 두면 미입력 알림에서 빠집니다.</div>
+      <a class="lnk" id="farmSheetLink" target="_blank" rel="noopener">농장기준 시트 열기</a>
+      <a class="lnk" id="recSheetLink" target="_blank" rel="noopener">폐사 기록 시트 열기</a>
+    </section>
   </div>
 </main>
 
@@ -160,7 +208,7 @@ const store = {
 };
 
 // 접속 키: 설정 링크(#k=...)로 한 번 열면 저장. 카톡 알림 링크는 #check&k=... 로 들어와 바로 체크 화면을 엶
-const START_VIEW = /(^#|&)check/.test(location.hash) ? 'check' : 'form';
+const START_VIEW = (location.hash.match(/(?:^#|&)(check|stats|settings)\b/) || [])[1] || 'form';
 (() => {
   const m = location.hash.match(/k=([\w-]+)/);
   if (m) store.set('key', m[1]);
@@ -168,7 +216,7 @@ const START_VIEW = /(^#|&)check/.test(location.hash) ? 'check' : 'form';
 })();
 const KEY = store.get('key', '');
 
-const state = { photos: [], farm: '', rows: [{ dong: '', count: 1 }], farms: store.get('farms', []), showAll: false };
+const state = { photos: [], farm: '', rows: [{ dong: '', count: 1 }], farms: store.get('farms', []), showAll: false, heatOn: store.get('heatOn', false) };
 const today = () => { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 10); };
 
 function toast(msg, ok = true) {
@@ -309,7 +357,7 @@ function renderRows() {
   state.rows.forEach((r, i) => {
     const d = document.createElement('div'); d.className = 'row';
     d.innerHTML = `
-      <div><div class="dong"><input inputmode="numeric" placeholder="동" value="${r.dong}"><span>동</span></div>
+      <div><div class="dong"><input inputmode="numeric" placeholder="동" value="${r.dong}"><span>동</span>${state.heatOn ? `<button class="heat${r.heat ? ' on' : ''}">폭염</button>` : ''}</div>
         ${state.rows.length > 1 ? '<button class="rm">이 줄 빼기</button>' : ''}</div>
       <div class="step"><button aria-label="한 마리 빼기">−</button><input inputmode="numeric" value="${r.count}"><button aria-label="한 마리 더하기">+</button></div>`;
     const [dong, cnt] = d.querySelectorAll('input');
@@ -319,6 +367,7 @@ function renderRows() {
     minus.onclick = () => { r.count = Math.max(0, r.count - 1); cnt.value = r.count; update(); };
     plus.onclick = () => { r.count += 1; cnt.value = r.count; update(); };
     const rm = d.querySelector('.rm'); if (rm) rm.onclick = () => { state.rows.splice(i, 1); renderRows(); update(); };
+    const ht = d.querySelector('.heat'); if (ht) ht.onclick = () => { r.heat = !r.heat; ht.classList.toggle('on', r.heat); };
     box.appendChild(d);
   });
 }
@@ -344,6 +393,7 @@ async function loadFarms() {
     const j = await api({ action: 'farms' });
     if (!j.ok) throw new Error(j.error);
     state.farms = j.farms; store.set('farms', j.farms); renderFarms();
+    if (j.heat !== undefined && j.heat !== state.heatOn) { state.heatOn = j.heat; store.set('heatOn', j.heat); renderRows(); }
   } catch (e) {
     if (!state.farms.length) $('farms').innerHTML = '<div class="empty">농장 목록을 못 불러왔습니다.<br>원인: ' +
       String(e.message || e).replace(/[<>&]/g, '') + '</div>';
@@ -409,7 +459,7 @@ $('save').onclick = async () => {
     const payload = { key: KEY, farm, date: $('date').value || today(), rows: state.rows.filter(r => r.count > 0), photos };
     try {
       const j = await post(payload);
-      toast(`${farm} ${j.total}두 저장 완료 (사진 ${j.photos}장)` + (skipped ? ` · 사진 ${skipped}장은 용량이 너무 커서 제외` : ''));
+      toast(`${farm} ${j.total}두 저장 완료 (사진 ${j.photos}장)` + (skipped ? ` · 사진 ${skipped}장은 용량이 너무 커서 제외` : '') + (j.spike ? ' · ⚠ 폐사 급증 알림을 카톡으로 보냈습니다' : ''));
     } catch (e) {
       if (!e.offline) throw e;
       await queue(payload);
@@ -428,67 +478,193 @@ $('save').onclick = async () => {
 // ---------- 피그온 미등록 체크 ----------
 const WD = '일월화수목금토';
 const md = d => { const x = new Date(d + 'T00:00:00+09:00'); return `${x.getMonth() + 1}/${x.getDate()} (${WD[x.getDay()]})`; };
-const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-let checkData = { groups: [], done: [] };
+const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const short = f => String(f).replace(/농장$|농원$/, '');
+let checkData = { groups: [], done: [], order: {}, sort: '피그온순', lateDays: 2, alerts: [], stats: [], threshold: 95 };
+let sortMode = store.get('sortMode', '');
 
-function cardHtml(g, i, done) {
-  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두`).join(' · ');
+const ord = f => (checkData.order[f] || {}).order || 999;
+function sortGroups(list) {
+  const mode = sortMode || checkData.sort;
+  return list.sort(mode === '피그온순'
+    ? (a, b) => ord(a.farm) - ord(b.farm) || a.farm.localeCompare(b.farm, 'ko') || (a.date < b.date ? -1 : 1)
+    : (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : ord(a.farm) - ord(b.farm));
+}
+function cardHtml(g, i, done, byFarm) {
+  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두${r.heat ? '<span class="htag">폭염</span>' : ''}`).join(' · ');
   const ph = g.photos.length ? `<a href="${esc(g.photos[0])}" target="_blank" rel="noopener">사진${g.photos.length > 1 ? ' ' + g.photos.length : ''}</a>` : '';
-  const late = !done && g.days >= 2;
+  const late = !done && g.days >= checkData.lateDays;
+  const title = byFarm ? md(g.date) : esc(short(g.farm));
   return `<div class="card${late ? ' late' : ''}${done ? ' done' : ''}">
-    <div class="ct">${esc(g.farm.replace(/농장$|농원$/, ''))} ${g.total}두${late ? `<span class="tag">${g.days}일째</span>` : ''}</div>
+    <div class="ct">${title} ${g.total}두${late ? `<span class="tag">${g.days}일째</span>` : ''}</div>
     <button class="chk" data-i="${i}" data-done="${done ? 1 : 0}">${done ? '✓ 완료' : '등록완료'}</button>
     <div class="cd">${dongs}${ph}</div></div>`;
 }
+function alertHtml() {
+  const a = checkData.alerts || [];
+  if (!a.length) return '';
+  return `<div class="alert"><b>⚠ 육성율 ${checkData.threshold}% 미만</b> (어제 폐사 입력 농장)<br>` +
+    a.map(g => `${esc(short(g.farm))} ${esc(g.group)} <b>${g.rate.toFixed(1)}%</b>${g.heat ? ` <span class="sm">(폭염 포함 ${g.rateHeat.toFixed(1)}%)</span>` : ''}`).join('<br>') + '</div>';
+}
 function renderCheck() {
-  const { groups, done } = checkData;
+  const { done } = checkData;
+  const groups = sortGroups(checkData.groups);
+  const mode = sortMode || checkData.sort, byFarm = mode === '피그온순';
   $('pendN').textContent = groups.length || '';
+  $('alertN').textContent = (checkData.alerts || []).length || '';
+  $('alertBox').innerHTML = alertHtml();
+  [...$('sortSeg').children].forEach(b => b.classList.toggle('on', b.dataset.s === mode));
   const box = $('pendList');
   if (!groups.length) box.innerHTML = '<div class="allok">✓ 미등록 건이 없습니다</div>';
   else {
-    let html = '', cur = '';
+    let html = '', cur = null;
     groups.forEach((g, i) => {
-      if (g.date !== cur) { cur = g.date; html += `<div class="dhead"><span>${md(g.date)}</span><button data-date="${g.date}">이 날짜 모두 완료</button></div>`; }
-      html += cardHtml(g, i, false);
+      const k = byFarm ? g.farm : g.date;
+      if (k !== cur) {
+        cur = k;
+        const o = checkData.order[g.farm] || {};
+        html += byFarm
+          ? `<div class="dhead"><span>${esc(o.pigon || short(g.farm))}<span class="code">${esc(o.code || '')}</span></span><button data-farm="${esc(g.farm)}">이 농장 모두 완료</button></div>`
+          : `<div class="dhead"><span>${md(g.date)}</span><button data-date="${g.date}">이 날짜 모두 완료</button></div>`;
+      }
+      html += cardHtml(g, i, false, byFarm);
     });
     box.innerHTML = html;
   }
   $('doneWrap').hidden = !done.length;
-  $('doneList').innerHTML = done.map((g, i) => cardHtml(g, i, true)).join('');
+  $('doneList').innerHTML = done.map((g, i) => cardHtml(g, i, true, false)).join('');
+  renderStats();
 }
 async function loadCheck() {
   try {
     const j = await api({ action: 'pending' });
     if (!j.ok) throw new Error(j.error);
-    checkData = { groups: j.groups, done: j.done }; renderCheck();
+    Object.assign(checkData, j); renderCheck();
   } catch (e) {
     $('pendList').innerHTML = '<div class="empty">목록을 못 불러왔습니다: ' + esc(e.message || e) + '</div>';
   }
 }
 async function mark(list, done) {
+  if (!list.length) return;
   const rows = list.flatMap(g => g.rows.map(r => r.row));
   // 화면 먼저 바꾸고 서버에 저장 (실패하면 되돌림)
-  const before = JSON.parse(JSON.stringify(checkData));
+  const before = { groups: checkData.groups.slice(), done: checkData.done.slice() };
   const key = g => g.date + '|' + g.farm;
   const keys = new Set(list.map(key));
   if (done) { checkData.groups = checkData.groups.filter(g => !keys.has(key(g))); checkData.done = list.concat(checkData.done); }
-  else { checkData.done = checkData.done.filter(g => !keys.has(key(g))); checkData.groups = checkData.groups.concat(list).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.farm.localeCompare(b.farm, 'ko')); }
+  else { checkData.done = checkData.done.filter(g => !keys.has(key(g))); checkData.groups = checkData.groups.concat(list); }
   renderCheck();
   try { await post({ key: KEY, action: 'mark', rows, done }); }
-  catch (e) { checkData = before; renderCheck(); toast('저장 실패: ' + e.message, false); }
+  catch (e) { Object.assign(checkData, before); renderCheck(); toast('저장 실패: ' + e.message, false); }
 }
 $('check').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.date) return mark(checkData.groups.filter(g => g.date === b.dataset.date), true);
+  if (b.dataset.s) { sortMode = b.dataset.s; store.set('sortMode', sortMode); return renderCheck(); }
+  const sorted = sortGroups(checkData.groups);
+  if (b.dataset.date) return mark(sorted.filter(g => g.date === b.dataset.date), true);
+  if (b.dataset.farm) return mark(sorted.filter(g => g.farm === b.dataset.farm), true);
   if (b.classList.contains('chk')) {
     const done = b.dataset.done === '1';
-    mark([(done ? checkData.done : checkData.groups)[+b.dataset.i]], !done);
+    mark([(done ? checkData.done : sorted)[+b.dataset.i]], !done);
   }
 };
+
+// ---------- 육성율 ----------
+function renderStats() {
+  const st = checkData.stats || [];
+  const box = $('statList');
+  if (!st.length) {
+    box.innerHTML = '<div class="alert">아직 전입 정보가 없습니다.<br>설정 → <b>농장기준 시트</b>에 농장별 그룹·전입일·전입두수(실두수−크레임)를 넣으면 여기에 육성율이 나오고, 95% 미만이면 다음날 아침 카톡으로 경고합니다.</div>';
+    return;
+  }
+  const byFarm = {};
+  st.forEach(g => (byFarm[g.farm] = byFarm[g.farm] || []).push(g));
+  box.innerHTML = alertHtml() + Object.keys(byFarm).sort((a, b) => ord(a) - ord(b)).map(f => {
+    const o = checkData.order[f] || {};
+    return `<div class="stat"><h3>${esc(o.pigon || short(f))}<span class="code">${esc(o.code || '')}</span></h3><table>` +
+      byFarm[f].map(g => `<tr><td><b>${esc(g.group)}</b>${g.dongs.length ? ` <span class="sm">${esc(g.dongs.join(','))}동</span>` : ''}<br>
+        <span class="sm">전입 ${esc(g.inDate.slice(5).replace('-', '/'))} · ${g.count.toLocaleString()}두 · 누적폐사 ${g.dead}${g.heat ? ` (폭염 ${g.heat})` : ''}${g.lastDate ? ' · 최근 ' + esc(g.lastDate.slice(5).replace('-', '/')) : ''}</span></td>
+        <td class="r"><span class="rate${g.rate < checkData.threshold ? ' bad' : ''}">${g.rate.toFixed(1)}%</span>${g.heat ? `<br><span class="sm">폭염 포함 ${g.rateHeat.toFixed(1)}%</span>` : ''}</td></tr>`).join('') +
+      '</table></div>';
+  }).join('');
+}
+
+// ---------- 설정 ----------
+let setData = null;
+function hourOpts(v, allowOff) {
+  let h = allowOff ? `<option value="끔"${v === '' ? ' selected' : ''}>끔</option>` : '';
+  for (let i = 5; i <= 22; i++) h += `<option value="${i}"${Number(v) === i && v !== '' ? ' selected' : ''}>${i < 12 ? '오전' : '오후'} ${i <= 12 ? i : i - 12}시</option>`;
+  return h;
+}
+function fieldHtml(d, v) {
+  const id = 'set_' + d.k;
+  let ctl = '';
+  if (d.type === 'bool') ctl = `<input type="checkbox" id="${id}"${v ? ' checked' : ''}>`;
+  else if (d.type === 'hour' || d.type === 'hourOpt') ctl = `<select id="${id}">${hourOpts(v, d.type === 'hourOpt')}</select>`;
+  else if (d.type === 'select') ctl = `<select id="${id}">${d.opts.map(o => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  else if (d.type === 'num') ctl = `<span><input type="number" id="${id}" value="${esc(v)}" step="any" style="width:80px"> ${esc(d.unit || '')}</span>`;
+  else if (d.type === 'date') ctl = `<input type="date" id="${id}" value="${esc(v)}">`;
+  else if (d.type === 'mmdd') ctl = `<input type="text" id="${id}" value="${esc(v)}" placeholder="06-01" style="width:80px">`;
+  const label = d.k.replace(/([가-힣])(시각|기준|배수|최소두수|일수|요일|정렬|시작|끝|알림)$/, '$1 $2');
+  return `<label for="${id}"><div class="lt"><span>${esc(label)}</span>${ctl}</div>${d.help ? `<div class="hp">${esc(d.help)}</div>` : ''}</label>`;
+}
+function renderSettings() {
+  const { defs, values, kakao, sheetUrl, farmSheetGid } = setData;
+  const groups = [];
+  defs.forEach(d => { let g = groups.find(x => x.name === d.group); if (!g) groups.push(g = { name: d.group, items: [] }); g.items.push(d); });
+  $('setForm').innerHTML = groups.map(g => `<section><h2>${esc(g.name)}</h2>${g.items.map(d => fieldHtml(d, values[d.k])).join('')}</section>`).join('') +
+    '<button class="btn pri" id="saveSet" style="width:100%;margin:0 0 12px">설정 저장</button>';
+  $('kakaoBox').innerHTML =
+    (kakao.connected ? '<div>✓ 연결됨' + (kakao.last ? ` · 마지막 발송 ${esc(kakao.last)}` : '') + '</div>'
+      : kakao.key ? '<div>아직 연결 안 됨 — 아래 <b>카카오 연결</b>을 눌러 동의해 주세요.</div>'
+      : '<div>카카오 앱 키 등록이 필요합니다 (Claude가 설정).</div>') +
+    (kakao.error ? `<div class="err">최근 오류: ${esc(kakao.error)}</div>` : '') +
+    `<div>${kakao.key ? `<button class="btn${kakao.connected ? '' : ' pri'}" id="kConnect">${kakao.connected ? '다시 연결' : '카카오 연결'}</button>` : ''}` +
+    (kakao.connected ? '<button class="btn" id="kTest">테스트 보내기</button><button class="btn" id="kMorning">아침 알림 지금 받기</button>' : '') + '</div>';
+  $('farmSheetLink').href = sheetUrl + '#gid=' + farmSheetGid;
+  $('recSheetLink').href = sheetUrl;
+}
+async function loadSettings() {
+  try {
+    const j = await api({ action: 'settings' });
+    if (!j.ok) throw new Error(j.error);
+    setData = j; renderSettings();
+  } catch (e) { $('kakaoBox').textContent = '설정을 못 불러왔습니다: ' + (e.message || e); }
+}
+$('settings').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  try {
+    if (b.id === 'saveSet') {
+      const values = {};
+      setData.defs.forEach(d => {
+        const el = $('set_' + d.k); if (!el) return;
+        values[d.k] = d.type === 'bool' ? el.checked : el.value;
+      });
+      b.disabled = true;
+      const j = await post({ key: KEY, action: 'settings', values });
+      setData.values = j.values; renderSettings();
+      if (sortMode) { sortMode = ''; store.set('sortMode', ''); }
+      toast('설정을 저장했습니다. 다음 알림부터 바로 적용됩니다');
+      loadCheck(); loadFarms();
+    } else if (b.id === 'kConnect') {
+      const j = await api({ action: 'kakaoAuth' });
+      if (!j.ok) throw new Error(j.error);
+      location.href = j.url;
+    } else if (b.id === 'kTest' || b.id === 'kMorning') {
+      b.disabled = true;
+      await post({ key: KEY, action: b.id === 'kTest' ? 'kakaoTest' : 'morningTest' });
+      toast(b.id === 'kTest' ? '카톡으로 테스트 메시지를 보냈습니다' : '지금 기준 알림을 카톡으로 보냈습니다 (보낼 내용이 없으면 오지 않음)');
+      b.disabled = false;
+    }
+  } catch (err) { toast('실패: ' + err.message, false); b.disabled = false; loadSettings(); }
+};
+
 function show(v) {
-  $('form').hidden = v !== 'form'; $('bar').hidden = v !== 'form'; $('check').hidden = v !== 'check';
+  ['form', 'check', 'stats', 'settings'].forEach(x => $(x).hidden = x !== v);
+  $('bar').hidden = v !== 'form';
   [...$('tabs').children].forEach(b => b.classList.toggle('on', b.dataset.v === v));
-  if (v === 'check') loadCheck();
+  if (v === 'check' || v === 'stats') loadCheck();
+  if (v === 'settings') loadSettings();
   window.scrollTo(0, 0);
 }
 $('tabs').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.v); };
@@ -502,7 +678,7 @@ else {
   renderPhotos(); renderFarms(); renderRows(); update();
   show(START_VIEW);
   loadShared(); loadFarms(); loadRecent(); flushPending();
-  if (START_VIEW !== 'check') loadCheck();
+  if (START_VIEW === 'form') loadCheck();
   $('net').textContent = navigator.onLine ? '' : '오프라인';
   window.addEventListener('offline', () => $('net').textContent = '오프라인');
   window.addEventListener('online', () => $('net').textContent = '');

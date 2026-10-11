@@ -1,5 +1,5 @@
 // 폐사 입력 앱 서비스워커: 공유받은 사진을 잠시 보관하고 앱 화면으로 넘김 + 화면 파일 캐시
-const SHELL = 'pyesa-shell-v3';
+const SHELL = 'pyesa-shell-v4';
 const SHARE = 'pyesa-share';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './heic2any.min.js'];
 
