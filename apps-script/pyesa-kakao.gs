@@ -425,7 +425,7 @@ function morningLines_(S, today) {
   } else lines.push('■ 피그온 미등록 없음 ✓');
   const ra = rearingAlerts_(S, today);
   if (ra.length) {
-    lines.push('', `■ ⚠ 육성율 ${S.육성율경고기준}% 미만 (어제 폐사 입력 농장)`);
+    lines.push('', `■ ⚠ 육성율 ${S.육성율경고기준}% 미만`);
     const byF = {};
     ra.forEach(g => (byF[g.farm] = byF[g.farm] || []).push(`${g.group} ${rateTxt_(g)}`));
     Object.keys(byF).forEach(f => lines.push(`${shortFarm_(f)} ${byF[f].join(' · ')}`));
