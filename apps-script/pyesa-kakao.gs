@@ -393,14 +393,18 @@ function sendKakao_(text, url, button) {
 }
 
 /** 제목 + 여러 줄을 카톡 200자 제한에 맞춰 나눠 보냄 */
-function sendLines_(title, lines, url, button) {
+/** 제목 + 여러 줄을 카톡 200자 제한에 맞춰 나눔 (보낼 글 목록) */
+function chunkLines_(title, lines) {
   const chunks = []; let cur = title;
   lines.forEach(l => {
     if ((cur + '\n' + l).length > 195) { chunks.push(cur); cur = title + ' (계속)\n' + l; }
     else cur += '\n' + l;
   });
   chunks.push(cur);
-  chunks.forEach(c => sendKakao_(c, url, button));
+  return chunks;
+}
+function sendLines_(title, lines, url, button) {
+  chunkLines_(title, lines).forEach(c => sendKakao_(c, url, button));
 }
 
 /* ---------- 알림 내용 ---------- */
@@ -412,23 +416,35 @@ function pendingLines_(S) {
   return { groups, lines: groups.map(g => `${md_(g.date)} ${shortFarm_(g.farm)} ${g.total}두${g.heat ? '(폭염' + g.heat + ')' : ''}${g.days >= S.미등록강조일수 ? ' ⚠' + g.days + '일째' : ''}`) };
 }
 
-function 아침알림_(S, today) {
-  const { groups, lines } = pendingLines_(S);
+/** 아침 알림 한 통: ① 피그온 미등록(맨 위) ② 육성율 주의 ③ 어제 폐사 입력 없는 농장(참고) */
+function morningLines_(S, today) {
+  const { groups, lines: pl } = pendingLines_(S);
+  const lines = [];
   if (groups.length) {
     const sum = groups.reduce((a, g) => a + g.total, 0);
-    sendLines_(`[피그온 미등록] ${groups.length}건 · ${sum}두`, lines, CHECK_URL_(), '등록 체크하기');
-  }
-  const warn = [];
+    lines.push(`■ 피그온 미등록 ${groups.length}건 · ${sum}두`, ...pl);
+  } else lines.push('■ 피그온 미등록 없음 ✓');
   const ra = rearingAlerts_(S, today);
   if (ra.length) {
-    warn.push(`■ 육성율 ${S.육성율경고기준}% 미만`);
-    ra.forEach(g => warn.push(`${shortFarm_(g.farm)} ${g.group} ${rateTxt_(g)}`));
+    lines.push('', `■ ⚠ 육성율 ${S.육성율경고기준}% 미만 (어제 폐사 입력 농장)`);
+    ra.forEach(g => lines.push(`${shortFarm_(g.farm)} ${g.group} ${rateTxt_(g)}`));
   }
   if (S.미입력농장알림) {
     const miss = missingFarms_(today);
-    if (miss.length) warn.push(`■ 어제 폐사 입력 없음`, miss.map(shortFarm_).join(', '));
+    if (miss.length) lines.push('', `■ 참고: 어제(${md_(addDays_(today, -1))}) 폐사사진 입력 없는 농장`, miss.map(shortFarm_).join(', '));
   }
-  if (warn.length) sendLines_(`[⚠ 주의] ${md_(addDays_(today, -1))} 기준`, warn, STATS_URL_(), '육성율 보기');
+  const wd = '일월화수목금토'[new Date(today + 'T12:00:00+09:00').getDay()];
+  return { title: `[폐사 아침 알림] ${md_(today)}(${wd})`, lines, pending: groups.length, warn: ra.length };
+}
+function 아침알림_(S, today) {
+  const m = morningLines_(S, today);
+  if (!m.pending && !m.warn && m.lines.length <= 1) return;   // 보낼 내용 없음
+  sendLines_(m.title, m.lines, m.pending ? CHECK_URL_() : STATS_URL_(), m.pending ? '등록 체크하기' : '육성율 보기');
+}
+function morningPreview_() {
+  const S = settings_(), today = ymd_(new Date(Date.now() + 864e5));   // 내일 아침 기준
+  const m = morningLines_(S, today);
+  return { ok: true, date: today, messages: chunkLines_(m.title, m.lines), note: '오늘 밤까지 입력·체크한 내용 기준 (내일 아침에 다시 계산)' };
 }
 
 function 재알림_(S) {
