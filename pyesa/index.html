@@ -66,6 +66,25 @@
   .setup { text-align: center; padding: 40px 16px; color: var(--muted); line-height: 1.6; }
   .busy { position: fixed; inset: 0; background: rgba(244,239,230,.75); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 16px; }
   .busy.show { display: flex; }
+  .tabs { position: sticky; top: calc(env(safe-area-inset-top) + 54px); z-index: 4; display: flex; background: var(--green); padding: 0 12px 8px; gap: 6px; }
+  .tabs button { flex: 1; font: inherit; font-size: 15px; padding: 10px 6px; border-radius: 10px; border: 0; background: rgba(255,255,255,.12); color: #F4EBD0; }
+  .tabs button.on { background: #F4EBD0; color: var(--green); font-weight: 700; }
+  .tabs b { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 10px; background: var(--orange); color: #fff; font-size: 13px; line-height: 20px; }
+  .tabs b:empty { display: none; }
+  .hint { font-size: 13px; color: var(--muted); line-height: 1.5; background: transparent; border: 0; padding: 4px 2px 8px; margin: 0; }
+  .dhead { display: flex; justify-content: space-between; align-items: center; margin: 14px 2px 6px; font-size: 14px; font-weight: 700; color: var(--ink); }
+  .dhead button { font: inherit; font-size: 13px; border: 0; background: transparent; color: var(--green-2); padding: 4px 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+  .card.late { border-color: #E9B49A; background: #FFF6F0; }
+  .card .ct { font-size: 17px; font-weight: 700; }
+  .card .ct .tag { font-size: 12px; font-weight: 700; color: #fff; background: var(--danger); border-radius: 6px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+  .card .cd { grid-column: 1; font-size: 14px; color: var(--muted); }
+  .card .cd a { color: var(--green-2); margin-left: 6px; }
+  .card .chk { grid-row: 1 / span 2; grid-column: 2; font: inherit; font-size: 15px; font-weight: 700; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--green); background: #fff; color: var(--green); }
+  .card.done { opacity: .6; }
+  .card.done .chk { background: var(--green); color: #fff; }
+  .allok { text-align: center; padding: 36px 10px; color: var(--ok); font-size: 17px; font-weight: 700; }
+  .subh { font-size: 13px; color: var(--muted); margin: 22px 2px 6px; }
 </style>
 </head>
 <body>
@@ -73,6 +92,10 @@
   <div><h1>폐사 입력</h1><div class="sub" id="who">비육계열3팀</div></div>
   <div class="sub" id="net"></div>
 </header>
+<nav class="tabs" id="tabs" hidden>
+  <button data-v="form" class="on">폐사 입력</button>
+  <button data-v="check">피그온 미등록<b id="pendN"></b></button>
+</nav>
 
 <main id="app">
   <div class="setup" id="setup" hidden>
@@ -111,6 +134,12 @@
       <ul id="recent"><li class="empty">불러오는 중…</li></ul>
     </section>
   </div>
+
+  <div id="check" hidden>
+    <p class="hint">피그온에 등록한 건은 <b>등록완료</b>를 누르세요. 안 누른 건은 다음 날 아침 카톡으로 다시 알려 드립니다.</p>
+    <div id="pendList"><div class="empty">불러오는 중…</div></div>
+    <div id="doneWrap" hidden><div class="subh">오늘 체크한 것 (잘못 눌렀으면 다시 누르면 취소)</div><div id="doneList"></div></div>
+  </div>
 </main>
 
 <div class="bar" id="bar" hidden>
@@ -130,10 +159,12 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
 };
 
-// 접속 키: 설정 링크(#k=...)로 한 번 열면 저장
+// 접속 키: 설정 링크(#k=...)로 한 번 열면 저장. 카톡 알림 링크는 #check&k=... 로 들어와 바로 체크 화면을 엶
+const START_VIEW = /(^#|&)check/.test(location.hash) ? 'check' : 'form';
 (() => {
   const m = location.hash.match(/k=([\w-]+)/);
-  if (m) { store.set('key', m[1]); history.replaceState(null, '', location.pathname + location.search); }
+  if (m) store.set('key', m[1]);
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 })();
 const KEY = store.get('key', '');
 
@@ -387,21 +418,91 @@ $('save').onclick = async () => {
     const rec = [farm].concat(recentFarms().filter(f => f !== farm)).slice(0, 9); store.set('recentFarms', rec);
     state.photos.forEach(p => URL.revokeObjectURL(p.url));
     Object.assign(state, { photos: [], farm: '', rows: [{ dong: '', count: 1 }], showAll: false });
-    renderPhotos(); renderFarms(); renderRows(); update(); loadRecent(); flushPending();
+    renderPhotos(); renderFarms(); renderRows(); update(); loadRecent(); flushPending(); loadCheck();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     toast('저장 실패: ' + e.message, false);
   } finally { $('busy').classList.remove('show'); }
 };
 
+// ---------- 피그온 미등록 체크 ----------
+const WD = '일월화수목금토';
+const md = d => { const x = new Date(d + 'T00:00:00+09:00'); return `${x.getMonth() + 1}/${x.getDate()} (${WD[x.getDay()]})`; };
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let checkData = { groups: [], done: [] };
+
+function cardHtml(g, i, done) {
+  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두`).join(' · ');
+  const ph = g.photos.length ? `<a href="${esc(g.photos[0])}" target="_blank" rel="noopener">사진${g.photos.length > 1 ? ' ' + g.photos.length : ''}</a>` : '';
+  const late = !done && g.days >= 2;
+  return `<div class="card${late ? ' late' : ''}${done ? ' done' : ''}">
+    <div class="ct">${esc(g.farm.replace(/농장$|농원$/, ''))} ${g.total}두${late ? `<span class="tag">${g.days}일째</span>` : ''}</div>
+    <button class="chk" data-i="${i}" data-done="${done ? 1 : 0}">${done ? '✓ 완료' : '등록완료'}</button>
+    <div class="cd">${dongs}${ph}</div></div>`;
+}
+function renderCheck() {
+  const { groups, done } = checkData;
+  $('pendN').textContent = groups.length || '';
+  const box = $('pendList');
+  if (!groups.length) box.innerHTML = '<div class="allok">✓ 미등록 건이 없습니다</div>';
+  else {
+    let html = '', cur = '';
+    groups.forEach((g, i) => {
+      if (g.date !== cur) { cur = g.date; html += `<div class="dhead"><span>${md(g.date)}</span><button data-date="${g.date}">이 날짜 모두 완료</button></div>`; }
+      html += cardHtml(g, i, false);
+    });
+    box.innerHTML = html;
+  }
+  $('doneWrap').hidden = !done.length;
+  $('doneList').innerHTML = done.map((g, i) => cardHtml(g, i, true)).join('');
+}
+async function loadCheck() {
+  try {
+    const j = await api({ action: 'pending' });
+    if (!j.ok) throw new Error(j.error);
+    checkData = { groups: j.groups, done: j.done }; renderCheck();
+  } catch (e) {
+    $('pendList').innerHTML = '<div class="empty">목록을 못 불러왔습니다: ' + esc(e.message || e) + '</div>';
+  }
+}
+async function mark(list, done) {
+  const rows = list.flatMap(g => g.rows.map(r => r.row));
+  // 화면 먼저 바꾸고 서버에 저장 (실패하면 되돌림)
+  const before = JSON.parse(JSON.stringify(checkData));
+  const key = g => g.date + '|' + g.farm;
+  const keys = new Set(list.map(key));
+  if (done) { checkData.groups = checkData.groups.filter(g => !keys.has(key(g))); checkData.done = list.concat(checkData.done); }
+  else { checkData.done = checkData.done.filter(g => !keys.has(key(g))); checkData.groups = checkData.groups.concat(list).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.farm.localeCompare(b.farm, 'ko')); }
+  renderCheck();
+  try { await post({ key: KEY, action: 'mark', rows, done }); }
+  catch (e) { checkData = before; renderCheck(); toast('저장 실패: ' + e.message, false); }
+}
+$('check').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.date) return mark(checkData.groups.filter(g => g.date === b.dataset.date), true);
+  if (b.classList.contains('chk')) {
+    const done = b.dataset.done === '1';
+    mark([(done ? checkData.done : checkData.groups)[+b.dataset.i]], !done);
+  }
+};
+function show(v) {
+  $('form').hidden = v !== 'form'; $('bar').hidden = v !== 'form'; $('check').hidden = v !== 'check';
+  [...$('tabs').children].forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (v === 'check') loadCheck();
+  window.scrollTo(0, 0);
+}
+$('tabs').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.v); };
+
 // ---------- 시작 ----------
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 if (!KEY) { $('setup').hidden = false; }
 else {
-  $('form').hidden = false; $('bar').hidden = false;
+  $('tabs').hidden = false;
   $('date').value = today();
   renderPhotos(); renderFarms(); renderRows(); update();
+  show(START_VIEW);
   loadShared(); loadFarms(); loadRecent(); flushPending();
+  if (START_VIEW !== 'check') loadCheck();
   $('net').textContent = navigator.onLine ? '' : '오프라인';
   window.addEventListener('offline', () => $('net').textContent = '오프라인');
   window.addEventListener('online', () => $('net').textContent = '');
