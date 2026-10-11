@@ -28,6 +28,8 @@
   .ph img { width: 100%; height: 100%; object-fit: cover; }
   .ph button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 12px; border: 0;
     background: rgba(0,0,0,.6); color: #fff; font-size: 14px; line-height: 24px; padding: 0; }
+  .phmsg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 12px; line-height: 1.3; color: var(--muted); background: #EDE6D8; }
   .addph { flex: 0 0 auto; width: 84px; height: 84px; border-radius: 10px; border: 2px dashed var(--line);
     display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; text-align: center; }
   .empty { color: var(--muted); font-size: 14px; }
@@ -149,42 +151,105 @@ function renderPhotos() {
   [...box.querySelectorAll('.ph')].forEach(n => n.remove());
   state.photos.forEach((p, i) => {
     const d = document.createElement('div'); d.className = 'ph';
-    d.innerHTML = `<img src="${p.url}" alt=""><button aria-label="사진 빼기">×</button>`;
-    d.querySelector('button').onclick = () => { URL.revokeObjectURL(p.url); state.photos.splice(i, 1); renderPhotos(); };
+    d.innerHTML = p.busy ? '<div class="phmsg">사진<br>변환 중…</div>'
+      : p.bad ? '<div class="phmsg">미리보기<br>불가</div>'
+      : `<img src="${p.url}" alt="">`;
+    d.insertAdjacentHTML('beforeend', '<button aria-label="사진 빼기">×</button>');
+    const img = d.querySelector('img');
+    if (img) img.onerror = () => { p.bad = true; renderPhotos(); };
+    d.querySelector('button').onclick = () => { if (p.url) URL.revokeObjectURL(p.url); state.photos.splice(state.photos.indexOf(p), 1); renderPhotos(); };
     box.insertBefore(d, box.lastElementChild);
   });
-  $('phCount').textContent = state.photos.length ? state.photos.length + '장' : '';
+  const busy = state.photos.some(p => p.busy);
+  $('phCount').textContent = state.photos.length ? state.photos.length + '장' + (busy ? ' (변환 중)' : '') : '';
+  update();
 }
-function addFiles(files) {
-  [...files].filter(f => f.type.startsWith('image/')).forEach(f => state.photos.push({ file: f, url: URL.createObjectURL(f) }));
-  renderPhotos();
+
+// 갤럭시 '고효율 사진'·아이폰 사진은 HEIC 형식이라 크롬이 그대로 열지 못함 → JPEG로 바꿔서 사용
+async function isHeic(file) {
+  if (/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name || '')) return true;
+  try {
+    const h = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const tag = String.fromCharCode(...h.subarray(4, 12));
+    return /^ftyp(heic|heix|hevc|hevx|heim|heis|mif1|msf1)/.test(tag);
+  } catch (e) { return false; }
 }
+let heicLib = null;
+function loadHeicLib() {
+  if (window.heic2any) return Promise.resolve();
+  return heicLib || (heicLib = new Promise((ok, no) => {
+    const s = document.createElement('script'); s.src = 'heic2any.min.js';
+    s.onload = ok; s.onerror = () => { heicLib = null; no(new Error('HEIC 변환기를 못 불러왔습니다')); };
+    document.head.appendChild(s);
+  }));
+}
+async function toJpegIfHeic(file) {
+  if (!(await isHeic(file))) return file;
+  await loadHeicLib();
+  let out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+  if (Array.isArray(out)) out = out[0];
+  return new File([out], (file.name || 'photo').replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
+}
+
+// 사진 한 장 추가: HEIC면 변환하고, 그래도 못 열면 '미리보기 불가'로 표시하되 원본은 그대로 보관
+async function addPhoto(file) {
+  const p = { file, url: '', busy: true, bad: false };
+  state.photos.push(p); renderPhotos();
+  try { p.file = await toJpegIfHeic(file); } catch (e) { p.bad = true; p.err = String(e.message || e); }
+  p.url = URL.createObjectURL(p.file); p.busy = false; renderPhotos();
+}
+function looksLikeImage(f) { return !f.type || f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|hei[cf])$/i.test(f.name || ''); }
+async function addFiles(files) { for (const f of [...files].filter(looksLikeImage)) await addPhoto(f); }
 $('pick').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
 
 async function loadShared() {
   if (!('caches' in window)) return;
+  const err = new URLSearchParams(location.search).get('shareerr');
+  if (err) toast('공유받은 사진을 못 읽었습니다: ' + err, false);
   const cache = await caches.open('pyesa-share');
   const keys = await cache.keys();
+  const files = [];
   for (const req of keys) {
-    const res = await cache.match(req);
-    const blob = await res.blob();
-    state.photos.push({ file: new File([blob], 'shared.jpg', { type: blob.type || 'image/jpeg' }), url: URL.createObjectURL(blob) });
+    try {
+      const res = await cache.match(req);
+      const blob = await res.blob();
+      const name = decodeURIComponent(res.headers.get('X-File-Name') || '') || 'shared.jpg';
+      if (blob.size) files.push(new File([blob], name, { type: blob.type || '' }));
+    } catch (e) {}
     await cache.delete(req);
   }
-  if (keys.length) { renderPhotos(); history.replaceState(null, '', location.pathname); }
+  if (keys.length || err) history.replaceState(null, '', location.pathname);
+  for (const f of files) await addPhoto(f);
 }
 
-// 큰 사진은 긴 변 1600px JPEG로 줄여서 전송 (속도·용량)
-async function shrink(file) {
-  let bmp;
-  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { bmp = await createImageBitmap(file); }
-  const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
-  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
-  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
-  const buf = new Uint8Array(await blob.arrayBuffer());
+function toBase64(buf) {
   let bin = ''; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
-  return { mime: 'image/jpeg', data: btoa(bin) };
+  return btoa(bin);
+}
+async function decode(file) {
+  try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) {}
+  try { return await createImageBitmap(file); } catch (e) {}
+  // 마지막 방법: <img>로 열기
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image(); img.src = url; await img.decode(); return img;
+  } finally { URL.revokeObjectURL(url); }
+}
+// 큰 사진은 긴 변 1600px JPEG로 줄여서 전송 (속도·용량). 못 줄이면 원본 그대로 보냄 → 기록 저장은 막히지 않음
+async function shrink(file) {
+  try {
+    const bmp = await decode(file);
+    const w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight;
+    const s = Math.min(1, 1600 / Math.max(w, h));
+    const c = document.createElement('canvas'); c.width = Math.round(w * s); c.height = Math.round(h * s);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    if (!blob) throw new Error('JPEG 변환 실패');
+    return { mime: 'image/jpeg', data: toBase64(new Uint8Array(await blob.arrayBuffer())) };
+  } catch (e) {
+    if (file.size > 15 * 1024 * 1024) return null;   // 너무 큰 원본은 빼고 기록만 저장
+    return { mime: file.type || 'image/jpeg', data: toBase64(new Uint8Array(await file.arrayBuffer())) };
+  }
 }
 
 // ---------- 농장 ----------
@@ -235,7 +300,7 @@ function update() {
   $('sum').innerHTML = state.farm
     ? `${state.farm.replace(/농장$/, '')} · <b>${total}두</b>${missingDong ? '<br>동 번호를 넣어 주세요' : ''}`
     : '농장을 고르고 두수를 넣으세요';
-  $('save').disabled = !state.farm || !total || missingDong;
+  $('save').disabled = !state.farm || !total || missingDong || state.photos.some(p => p.busy);
 }
 
 // ---------- 서버 ----------
@@ -264,9 +329,18 @@ async function loadRecent() {
 }
 $('reload').onclick = e => { e.preventDefault(); loadRecent(); };
 
+// 네트워크가 끊긴 경우만 폰에 보관(재전송), 서버가 답을 했는데 실패한 경우는 원인을 그대로 보여줌
 async function post(payload) {
-  const r = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
-  const j = await r.json();
+  let r;
+  try { r = await fetch(API, { method: 'POST', body: JSON.stringify(payload) }); }
+  catch (e) { throw Object.assign(new Error('인터넷 연결 안 됨'), { offline: true }); }
+  const text = await r.text();
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) {
+    const msg = (text.match(/<title>([^<]*)<\/title>/i) || [])[1] || text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+    throw Object.assign(new Error(`서버 응답 오류 (HTTP ${r.status}) ${msg}`), { server: true });
+  }
   if (!j.ok) throw Object.assign(new Error(j.error || '저장 실패'), { server: true });
   return j;
 }
@@ -285,7 +359,8 @@ async function flushPending() {
   box.hidden = false; box.textContent = `전송 대기 ${keys.length}건 — 보내는 중…`;
   let sent = 0;
   for (const k of keys) {
-    try { await post(await (await c.match(k)).json()); await c.delete(k); sent++; } catch (e) { if (e.server) { await c.delete(k); } }
+    try { await post(await (await c.match(k)).json()); await c.delete(k); sent++; }
+    catch (e) { if (e.server) { await c.delete(k); toast('대기 중이던 기록 저장 실패: ' + e.message, false); } }
   }
   const left = (await c.keys()).length;
   box.hidden = !left; box.textContent = `전송 대기 ${left}건 — 인터넷이 연결되면 자동으로 보냅니다`;
@@ -298,13 +373,14 @@ $('save').onclick = async () => {
   const farm = state.farm;
   try {
     const photos = [];
-    for (const p of state.photos) photos.push(await shrink(p.file));
+    let skipped = 0;
+    for (const p of state.photos) { const x = await shrink(p.file); if (x) photos.push(x); else skipped++; }
     const payload = { key: KEY, farm, date: $('date').value || today(), rows: state.rows.filter(r => r.count > 0), photos };
     try {
       const j = await post(payload);
-      toast(`${farm} ${j.total}두 저장 완료 (사진 ${j.photos}장)`);
+      toast(`${farm} ${j.total}두 저장 완료 (사진 ${j.photos}장)` + (skipped ? ` · 사진 ${skipped}장은 용량이 너무 커서 제외` : ''));
     } catch (e) {
-      if (e.server) throw e;
+      if (!e.offline) throw e;
       await queue(payload);
       toast('인터넷이 안 돼서 폰에 보관했습니다. 연결되면 자동으로 보냅니다', false);
     }
