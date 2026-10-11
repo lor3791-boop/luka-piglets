@@ -29,7 +29,6 @@ const SETTINGS_DEF = [
   { k: '알림중지시작', type: 'date', def: '', group: '알림 시각', help: '휴가·교육 등 알림을 쉬는 기간 (비우면 계속 받음)' },
   { k: '알림중지끝', type: 'date', def: '', group: '알림 시각', help: '' },
   { k: '육성율경고기준', type: 'num', def: 95, unit: '%', group: '주의 경고', help: '전날 폐사 입력한 농장의 그룹 육성율이 이 값 미만이면 다음날 아침 경고' },
-  { k: '미입력농장알림', type: 'bool', def: true, group: '주의 경고', help: '전날 폐사 입력이 하나도 없는 농장을 아침에 알려줌 (농장기준 시트 사용=N 농장은 제외)' },
   { k: '급증경보', type: 'bool', def: true, group: '주의 경고', help: '폐사를 저장하는 즉시, 평소보다 많으면 바로 카톡' },
   { k: '급증배수', type: 'num', def: 2, unit: '배', group: '주의 경고', help: '그날 두수가 최근 7일 하루 평균의 몇 배 이상이면 급증' },
   { k: '급증최소두수', type: 'num', def: 3, unit: '두', group: '주의 경고', help: '이 두수 미만이면 급증으로 보지 않음' },
@@ -416,7 +415,7 @@ function pendingLines_(S) {
   return { groups, lines: groups.map(g => `${md_(g.date)} ${shortFarm_(g.farm)} ${g.total}두${g.heat ? '(폭염' + g.heat + ')' : ''}${g.days >= S.미등록강조일수 ? ' ⚠' + g.days + '일째' : ''}`) };
 }
 
-/** 아침 알림 한 통: ① 피그온 미등록(맨 위) ② 육성율 주의 ③ 어제 폐사 입력 없는 농장(참고) */
+/** 아침 알림 한 통: ① 피그온 미등록(맨 위) ② 육성율 주의 */
 function morningLines_(S, today) {
   const { groups, lines: pl } = pendingLines_(S);
   const lines = [];
@@ -428,10 +427,6 @@ function morningLines_(S, today) {
   if (ra.length) {
     lines.push('', `■ ⚠ 육성율 ${S.육성율경고기준}% 미만 (어제 폐사 입력 농장)`);
     ra.forEach(g => lines.push(`${shortFarm_(g.farm)} ${g.group} ${rateTxt_(g)}`));
-  }
-  if (S.미입력농장알림) {
-    const miss = missingFarms_(today);
-    if (miss.length) lines.push('', `■ 참고: 어제(${md_(addDays_(today, -1))}) 폐사사진 입력 없는 농장`, miss.map(shortFarm_).join(', '));
   }
   const wd = '일월화수목금토'[new Date(today + 'T12:00:00+09:00').getDay()];
   return { title: `[폐사 아침 알림] ${md_(today)}(${wd})`, lines, pending: groups.length, warn: ra.length };
