@@ -109,7 +109,7 @@ const FARM_SEED = [
   ['자돈_루카', 'P200165', '루카농장'], ['재성(박상배)', 'P200178', '재성농장'], ['정축산', 'P200160', '정축산'],
   ['평지', 'P200161', '평지농장'],
 ];
-const FARM_HEAD = ['순서', '피그온 농장명', '피그온 코드', '앱 농장명', '그룹', '전입일', '전입두수(실두수-크레임)', '동(쉼표, 비우면 전체)', '이전 누적폐사', '누적 기준일', '사용(Y/N)'];
+const FARM_HEAD = ['순서', '피그온 농장명', '피그온 코드', '앱 농장명', '그룹', '전입일', '전입두수(실두수)', '동(쉼표, 비우면 전체)', '피그온 누계감소(실두수-전출판매-재고)', '피그온 기준시각', '사용(Y/N)'];
 function farmSheet_() {
   const ss = pyesaSheet_();
   let sh = ss.getSheetByName('농장기준');
@@ -121,9 +121,15 @@ function farmSheet_() {
     sh.getRange('E:E').setNumberFormat('@'); sh.getRange('H:H').setNumberFormat('@');
     sh.setColumnWidths(1, 11, 100); sh.setColumnWidth(7, 150); sh.setColumnWidth(8, 150);
     sh.setFrozenRows(1);
-    sh.getRange(FARM_SEED.length + 3, 1).setValue('※ 한 농장에 그룹이 여럿이면 줄을 추가해 같은 앱 농장명으로 적습니다. 동을 적으면 그 동 폐사만 그 그룹에 들어갑니다. "이전 누적폐사"는 폐사입력 앱을 쓰기 전까지의 누적이며, 앱 기록은 "누적 기준일" 다음 날부터 더합니다 (비우면 전입일부터).');
+    sh.getRange(FARM_SEED.length + 3, 1).setValue(FARM_NOTE);
   }
   return sh;
+}
+const FARM_NOTE = '※ 육성율 = (실두수 − 피그온 누계감소 − 기준시각 이후 앱 폐사) ÷ 실두수 = (전출판매+재고) ÷ 실두수. 앱 폐사 중 기준시각 전에 이미 피그온 등록 체크한 것은 누계에 들어 있으므로 빼고 계산합니다. 동을 적으면 그 동 폐사만 그 그룹에 들어가고, 동이 없는 그룹이 여럿이면 재고 비율로 나눕니다(추정). 설정 → 전입현황 올리기로 언제든 다시 맞출 수 있습니다.';
+function baseTime_(v) {
+  if (v instanceof Date) return v;
+  const d = cellYmd_(v);
+  return d ? new Date(d + 'T23:59:59+09:00') : null;
 }
 let _farms = null;
 function farmInfo_() {
@@ -142,7 +148,7 @@ function farmInfo_() {
     if (inDate && cnt > 0 && String(r[10]).trim().toUpperCase() !== 'N') {
       f.groups.push({ name: String(r[4] || '').trim() || md_(inDate) + ' 전입', inDate, count: cnt,
         dongs: String(r[7] || '').split(/[,\s·/]+/).map(s => s.replace(/동$/, '').trim()).filter(Boolean),
-        prev: Number(r[8]) || 0, base: cellYmd_(r[9]) });
+        prev: Number(r[8]) || 0, baseTime: baseTime_(r[9]) });
     }
   });
   return (_farms = map);
@@ -210,30 +216,86 @@ function markRows_(rows, done) {
 }
 
 /* ---------- 육성율 ---------- */
-/** 그룹별 누적폐사·육성율. 동이 적힌 그룹은 그 동만, 동이 없는 그룹은 나머지 동 */
+/** 앱 폐사 기록이 이 그룹의 피그온 누계에 아직 안 들어 있으면 true */
+function notInPigon_(r, g) {
+  if (r.date < g.inDate) return false;
+  if (!g.baseTime) return true;
+  return !(r.done && r.doneAt && r.doneAt <= g.baseTime);
+}
+/** 그룹별 누적폐사·육성율. 동이 적힌 그룹은 그 동만, 나머지는 동 없는 그룹에 (여럿이면 재고 비율로 나눔) */
 function groupStats_(asOf) {
   const farms = farmInfo_(), recs = records_().list;
   const out = [];
   Object.values(farms).forEach(f => {
     if (!f.groups.length) return;
-    const claimed = new Set(f.groups.flatMap(g => g.dongs));
-    f.groups.forEach(g => {
-      let dead = g.prev, heat = 0, last = '';
-      recs.forEach(r => {
-        if (r.farm !== f.app || r.date > asOf) return;
-        if (g.base ? r.date <= g.base : r.date < g.inDate) return;
-        const hit = g.dongs.length ? g.dongs.includes(r.dong) : !claimed.has(r.dong) || f.groups.length === 1;
-        if (!hit) return;
-        dead += r.count; if (r.heat) heat += r.count;
-        if (r.date > last) last = r.date;
+    const acc = f.groups.map(g => ({ g, dead: g.prev, heat: 0, last: '', est: 0 }));
+    const open = acc.filter(a => !a.g.dongs.length);
+    recs.forEach(r => {
+      if (r.farm !== f.app || r.date > asOf) return;
+      let targets = acc.filter(a => a.g.dongs.includes(r.dong) && notInPigon_(r, a.g));
+      let shares;
+      if (targets.length) shares = targets.map(() => 1 / targets.length);
+      else {
+        targets = open.filter(a => notInPigon_(r, a.g));
+        if (!targets.length) return;
+        const alive = targets.map(a => Math.max(a.g.count - a.g.prev, 1));
+        const sum = alive.reduce((x, y) => x + y, 0);
+        shares = alive.map(x => x / sum);
+      }
+      targets.forEach((a, i) => {
+        a.dead += r.count * shares[i];
+        if (r.heat) a.heat += r.count * shares[i];
+        if (shares[i] < 1) a.est += r.count * shares[i];
+        if (r.date > a.last) a.last = r.date;
       });
-      const rate = (g.count - dead) / g.count * 100;
-      const rateHeat = (g.count - dead + heat) / g.count * 100;
-      out.push({ farm: f.app, order: f.order, group: g.name, inDate: g.inDate, count: g.count, dead, heat,
-        rate: Math.round(rate * 10) / 10, rateHeat: Math.round(rateHeat * 10) / 10, lastDate: last, dongs: g.dongs });
+    });
+    acc.forEach(a => {
+      const g = a.g;
+      const r1 = x => Math.round(x * 10) / 10;
+      out.push({ farm: f.app, order: f.order, group: g.name, inDate: g.inDate, count: g.count,
+        dead: r1(a.dead), heat: r1(a.heat), est: r1(a.est),
+        rate: r1((g.count - a.dead) / g.count * 100), rateHeat: r1((g.count - a.dead + a.heat) / g.count * 100),
+        lastDate: a.last, dongs: g.dongs });
     });
   });
   return out.sort((a, b) => a.order - b.order || (a.inDate < b.inDate ? -1 : 1));
+}
+
+/** 피그온 전입현황(앱에서 엑셀을 읽어 보낸 그룹 목록)으로 농장기준 시트 다시 채우기 */
+function importGroups_(groups, baseIso) {
+  const sh = farmSheet_();
+  const base = baseIso ? new Date(baseIso) : new Date();
+  const last = sh.getLastRow();
+  const old = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues().filter(r => r[3]) : [];
+  const norm = s => String(s || '').replace(/\s/g, '');
+  // 피그온 농장명 → 기존 행 정보 (순서·코드·앱 농장명·동·사용)
+  const farmsOrder = [], info = {}, dongs = {};
+  old.forEach(r => {
+    const k = norm(r[1]);
+    if (!info[k]) { info[k] = { order: r[0], pigon: r[1], code: r[2], app: r[3], use: String(r[10] || 'Y') }; farmsOrder.push(k); }
+    if (r[4] && r[7]) dongs[k + '|' + r[4]] = r[7];
+  });
+  const byFarm = {};
+  let matched = 0, skipped = {};
+  (groups || []).forEach(g => {
+    const k = norm(g.farm);
+    if (!info[k]) { skipped[g.farm] = 1; return; }
+    (byFarm[k] = byFarm[k] || []).push(g); matched++;
+  });
+  const rows = [];
+  farmsOrder.forEach(k => {
+    const f = info[k], list = (byFarm[k] || []).sort((a, b) => a.inDate < b.inDate ? -1 : 1);
+    if (!list.length) { rows.push([f.order, f.pigon, f.code, f.app, '', '', '', '', '', '', /^n$/i.test(f.use) ? 'N' : 'Y']); return; }
+    list.forEach(g => rows.push([f.order, f.pigon, f.code, f.app, g.group, new Date(g.inDate + 'T00:00:00+09:00'), g.count,
+      dongs[k + '|' + g.group] || '', g.prev, base, 'Y']));
+  });
+  sh.getRange(2, 1, Math.max(last, 2), 11).clearContent();
+  sh.getRange(1, 1, 1, FARM_HEAD.length).setValues([FARM_HEAD]);
+  if (rows.length) sh.getRange(2, 1, rows.length, 11).setValues(rows);
+  sh.getRange('F:F').setNumberFormat('yyyy-mm-dd'); sh.getRange('J:J').setNumberFormat('yyyy-mm-dd hh:mm');
+  sh.getRange(rows.length + 3, 1).setValue(FARM_NOTE);
+  _farms = null;
+  return { ok: true, groups: matched, rows: rows.length, skipped: Object.keys(skipped) };
 }
 
 /** 전날 폐사 입력한 농장 중 육성율 기준 미만 그룹 */
@@ -286,7 +348,7 @@ function kakaoCallback_(p) {
   if (p.error) return html('카카오 연결 취소됨: ' + p.error);
   const P = kakaoProps_();
   const payload = { grant_type: 'authorization_code', client_id: P.getProperty('KAKAO_REST_KEY'), redirect_uri: PYESA_EXEC, code: p.code };
-  const sec = P.getProperty('KAKAO_SECRET'); if (sec) payload.client_secret = sec;
+  const sec = P.getProperty('KAKAO_SECRET') || P.getProperty('KAKAO_SECRE'); if (sec) payload.client_secret = sec;
   const res = UrlFetchApp.fetch('https://kauth.kakao.com/oauth/token', { method: 'post', payload, muteHttpExceptions: true });
   const j = JSON.parse(res.getContentText());
   if (!j.refresh_token) return html('연결 실패: ' + res.getContentText());
@@ -303,7 +365,7 @@ function kakaoToken_() {
   if (Number(P.getProperty('KAKAO_ACCESS_EXP') || 0) > Date.now()) return P.getProperty('KAKAO_ACCESS');
   if (!P.getProperty('KAKAO_REFRESH')) throw new Error('카카오톡이 아직 연결되지 않았습니다 (설정 → 카카오 연결)');
   const payload = { grant_type: 'refresh_token', client_id: P.getProperty('KAKAO_REST_KEY'), refresh_token: P.getProperty('KAKAO_REFRESH') };
-  const sec = P.getProperty('KAKAO_SECRET'); if (sec) payload.client_secret = sec;
+  const sec = P.getProperty('KAKAO_SECRET') || P.getProperty('KAKAO_SECRE'); if (sec) payload.client_secret = sec;
   const res = UrlFetchApp.fetch('https://kauth.kakao.com/oauth/token', { method: 'post', payload, muteHttpExceptions: true });
   const j = JSON.parse(res.getContentText());
   if (!j.access_token) throw new Error('카카오 연결이 끊겼습니다. 설정에서 다시 연결해 주세요. ' + res.getContentText());
