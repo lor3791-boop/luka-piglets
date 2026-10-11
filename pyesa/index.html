@@ -175,7 +175,7 @@
   </div>
 
   <div id="stats" hidden>
-    <p class="hint">그룹별 육성율 = (전입두수 − 누적폐사) ÷ 전입두수. '폭염 포함'은 폭염폐사를 인정해 더한 값입니다. 전입 정보는 설정 → 농장기준 시트에서 넣습니다.</p>
+    <p class="hint">육성율 = (전출판매 + 재고) ÷ 실두수. 피그온 전입현황 누계에 그 뒤 앱으로 입력한 폐사를 더해 매일 계산합니다. '폭염 포함'은 폭염폐사를 인정해 더한 값입니다. 피그온 자료는 설정 → 전입현황 올리기로 갱신합니다.</p>
     <div id="statList"><div class="empty">불러오는 중…</div></div>
   </div>
 
@@ -184,6 +184,8 @@
     <div id="setForm" class="set"></div>
     <section><h2>기준표</h2>
       <div class="sm" style="line-height:1.5">농장기준 시트에 그룹별 전입일·전입두수를 넣으면 육성율 경고가 작동합니다. 빈 농장(출하 완료 등)은 사용=N으로 두면 미입력 알림에서 빠집니다.</div>
+      <label class="btn" style="display:inline-block;margin-top:10px">피그온 전입현황 엑셀 올리기<input type="file" id="inflowFile" accept=".xlsx,.xls" hidden></label>
+      <div class="sm" id="inflowMsg" style="margin-top:4px">피그온 '그룹보고서 전입현황' 엑셀을 올리면 담당 농장의 진행 중 그룹·전입두수·누계가 농장기준 시트에 자동으로 들어갑니다. 주 1회 정도 올리면 육성율이 피그온과 맞춰집니다.</div>
       <a class="lnk" id="farmSheetLink" target="_blank" rel="noopener">농장기준 시트 열기</a>
       <a class="lnk" id="recSheetLink" target="_blank" rel="noopener">폐사 기록 시트 열기</a>
     </section>
@@ -583,7 +585,7 @@ function renderStats() {
     const o = checkData.order[f] || {};
     return `<div class="stat"><h3>${esc(o.pigon || short(f))}<span class="code">${esc(o.code || '')}</span></h3><table>` +
       byFarm[f].map(g => `<tr><td><b>${esc(g.group)}</b>${g.dongs.length ? ` <span class="sm">${esc(g.dongs.join(','))}동</span>` : ''}<br>
-        <span class="sm">전입 ${esc(g.inDate.slice(5).replace('-', '/'))} · ${g.count.toLocaleString()}두 · 누적폐사 ${g.dead}${g.heat ? ` (폭염 ${g.heat})` : ''}${g.lastDate ? ' · 최근 ' + esc(g.lastDate.slice(5).replace('-', '/')) : ''}</span></td>
+        <span class="sm">전입 ${esc(g.inDate.slice(5).replace('-', '/'))} · ${g.count.toLocaleString()}두 · 누적 ${Math.round(g.dead)}${g.heat ? ` (폭염 ${Math.round(g.heat)})` : ''}${g.est ? ` · 동 미지정 ${g.est}두 재고비율 배분` : ''}${g.lastDate ? ' · 최근 입력 ' + esc(g.lastDate.slice(5).replace('-', '/')) : ''}</span></td>
         <td class="r"><span class="rate${g.rate < checkData.threshold ? ' bad' : ''}">${g.rate.toFixed(1)}%</span>${g.heat ? `<br><span class="sm">폭염 포함 ${g.rateHeat.toFixed(1)}%</span>` : ''}</td></tr>`).join('') +
       '</table></div>';
   }).join('');
@@ -657,6 +659,67 @@ $('settings').onclick = async e => {
       b.disabled = false;
     }
   } catch (err) { toast('실패: ' + err.message, false); b.disabled = false; loadSettings(); }
+};
+
+// ---------- 피그온 전입현황 엑셀 읽기 ----------
+// '그룹보고서 전입현황' 엑셀: 로트(차수)별 행 → 그룹별로 합쳐 재고가 남은 그룹만
+function parsePigonInflow(XLSX, buf) {
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  const hi = rows.findIndex(r => r && r.some(c => String(c || '').includes('그룹명')));
+  if (hi < 0) throw new Error('그룹명(차수) 칸을 찾지 못했습니다. 피그온 전입현황 엑셀이 맞는지 확인해 주세요.');
+  const H = rows[hi].map(c => String(c || '').replace(/\s/g, ''));
+  const col = name => H.findIndex(h => h.startsWith(name));
+  const nu = H.reduce((a, h, i) => (h === '누계' ? a.concat(i) : a), []);   // [폐사 누계, 전출·판매 누계]
+  const c = { farm: col('농장명'), grp: col('그룹명'), inDate: col('전입일'), cnt: col('실두수'), claim: col('클레임두수'), stock: col('당기재고') };
+  if ([c.farm, c.grp, c.inDate, c.cnt, c.stock].some(i => i < 0) || nu.length < 2) throw new Error('엑셀 칸 구성이 예상과 다릅니다 (농장명·그룹명·전입일·실두수·누계·당기재고).');
+  const ymd = v => {
+    if (typeof v === 'number') { const o = XLSX.SSF.parse_date_code(v); return `${o.y}-${String(o.m).padStart(2, '0')}-${String(o.d).padStart(2, '0')}`; }
+    const m = String(v || '').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+    return m ? `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}` : '';
+  };
+  const G = {};
+  rows.slice(hi + 1).forEach(r => {
+    const farm = String(r[c.farm] || '').trim(), g = String(r[c.grp] || '').trim();
+    if (!farm || !g || / 계$/.test(farm)) return;
+    const m = g.match(/-(\d{4})-(\d{1,3})(?:\((\d+)\))?$/);
+    const name = m ? `${m[1].slice(2)}-${Number(m[2])}` : g;
+    const k = farm + '|' + name, d = ymd(r[c.inDate]);
+    const x = G[k] || (G[k] = { farm, group: name, inDate: d, count: 0, dead: 0, out: 0, stock: 0, claim: 0 });
+    if (d && (!x.inDate || d < x.inDate)) x.inDate = d;
+    x.count += Number(r[c.cnt]) || 0; x.dead += Number(r[nu[0]]) || 0; x.out += Number(r[nu[1]]) || 0;
+    x.stock += Number(r[c.stock]) || 0; x.claim += Number(r[c.claim]) || 0;
+  });
+  return Object.values(G).filter(x => x.stock > 0 && x.count > 0)
+    .map(x => Object.assign(x, { prev: x.count - x.out - x.stock }));
+}
+
+let xlsxLib = null;
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return xlsxLib || (xlsxLib = new Promise((ok, no) => {
+    const sc = document.createElement('script'); sc.src = 'xlsx.full.min.js';
+    sc.onload = ok; sc.onerror = () => { xlsxLib = null; no(new Error('엑셀 읽기 도구를 못 불러왔습니다')); };
+    document.head.appendChild(sc);
+  }));
+}
+$('inflowFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const msg = $('inflowMsg');
+  msg.textContent = '엑셀 읽는 중…';
+  try {
+    await loadXlsx();
+    const groups = parsePigonInflow(XLSX, new Uint8Array(await f.arrayBuffer()));
+    if (!groups.length) throw new Error('재고가 남은 그룹이 없습니다');
+    msg.textContent = `그룹 ${groups.length}개 확인 — 저장 중…`;
+    const base = new Date(f.lastModified || Date.now()).toISOString();
+    const j = await post({ key: KEY, action: 'importGroups', base,
+      groups: groups.map(({ farm, group, inDate, count, prev }) => ({ farm, group, inDate, count, prev })) });
+    msg.textContent = `✓ 담당 농장 그룹 ${j.groups}개를 반영했습니다 (기준: ${new Date(base).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}).` +
+      (j.skipped && j.skipped.length ? ` 담당 아닌 농장 ${j.skipped.length}곳은 건너뜀.` : '');
+    toast('전입현황을 반영했습니다'); loadCheck();
+  } catch (err) { msg.textContent = '실패: ' + (err.message || err); toast('전입현황 반영 실패', false); }
 };
 
 function show(v) {
