@@ -622,7 +622,8 @@ function renderSettings() {
       : '<div>카카오 앱 키 등록이 필요합니다 (Claude가 설정).</div>') +
     (kakao.error ? `<div class="err">최근 오류: ${esc(kakao.error)}</div>` : '') +
     `<div>${kakao.key ? `<button class="btn${kakao.connected ? '' : ' pri'}" id="kConnect">${kakao.connected ? '다시 연결' : '카카오 연결'}</button>` : ''}` +
-    (kakao.connected ? '<button class="btn" id="kTest">테스트 보내기</button><button class="btn" id="kMorning">아침 알림 지금 받기</button>' : '') + '</div>';
+    (kakao.connected ? '<button class="btn" id="kTest">테스트 보내기</button><button class="btn" id="kMorning">아침 알림 지금 받기</button>' : '') +
+    '<button class="btn" id="kPreview">내일 아침 알림 미리보기</button></div><pre id="previewBox" class="sm" style="white-space:pre-wrap;background:#F4EFE6;border-radius:10px;padding:10px;margin:6px 0 0;font:13px/1.5 inherit" hidden></pre>';
   $('farmSheetLink').href = sheetUrl + '#gid=' + farmSheetGid;
   $('recSheetLink').href = sheetUrl;
 }
@@ -652,6 +653,13 @@ $('settings').onclick = async e => {
       const j = await api({ action: 'kakaoAuth' });
       if (!j.ok) throw new Error(j.error);
       location.href = j.url;
+    } else if (b.id === 'kPreview') {
+      b.disabled = true;
+      const j = await api({ action: 'preview' });
+      if (!j.ok) throw new Error(j.error);
+      const box = $('previewBox'); box.hidden = false;
+      box.textContent = j.messages.join('\n\n──── 다음 메시지 ────\n\n') + '\n\n※ ' + j.note;
+      b.disabled = false;
     } else if (b.id === 'kTest' || b.id === 'kMorning') {
       b.disabled = true;
       await post({ key: KEY, action: b.id === 'kTest' ? 'kakaoTest' : 'morningTest' });
