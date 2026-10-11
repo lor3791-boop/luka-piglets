@@ -426,7 +426,9 @@ function morningLines_(S, today) {
   const ra = rearingAlerts_(S, today);
   if (ra.length) {
     lines.push('', `■ ⚠ 육성율 ${S.육성율경고기준}% 미만 (어제 폐사 입력 농장)`);
-    ra.forEach(g => lines.push(`${shortFarm_(g.farm)} ${g.group} ${rateTxt_(g)}`));
+    const byF = {};
+    ra.forEach(g => (byF[g.farm] = byF[g.farm] || []).push(`${g.group} ${rateTxt_(g)}`));
+    Object.keys(byF).forEach(f => lines.push(`${shortFarm_(f)} ${byF[f].join(' · ')}`));
   }
   const wd = '일월화수목금토'[new Date(today + 'T12:00:00+09:00').getDay()];
   return { title: `[폐사 아침 알림] ${md_(today)}(${wd})`, lines, pending: groups.length, warn: ra.length };
