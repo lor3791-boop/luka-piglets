@@ -108,14 +108,14 @@ const FARM_SEED = [
   ['자돈_루카', 'P200165', '루카농장'], ['재성(박상배)', 'P200178', '재성농장'], ['정축산', 'P200160', '정축산'],
   ['평지', 'P200161', '평지농장'],
 ];
-const FARM_HEAD = ['순서', '피그온 농장명', '피그온 코드', '앱 농장명', '그룹', '전입일', '전입두수(실두수)', '동(쉼표, 비우면 전체)', '피그온 누계감소(실두수-전출판매-재고)', '피그온 기준시각', '사용(Y/N)'];
+const FARM_HEAD = ['순서', '피그온 농장명', '피그온 코드', '앱 농장명', '그룹', '전입일', '전입두수(실두수)', '동(쉼표, 비우면 전체)', '피그온 누계감소(실두수-전출판매-재고)', '피그온 기준시각', '사용(Y/N)', '피그온 재고(기준시각)'];
 function farmSheet_() {
   const ss = pyesaSheet_();
   let sh = ss.getSheetByName('농장기준');
   if (!sh) {
     sh = ss.insertSheet('농장기준');
     sh.getRange(1, 1, 1, FARM_HEAD.length).setValues([FARM_HEAD]).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF').setWrap(true);
-    sh.getRange(2, 1, FARM_SEED.length, 11).setValues(FARM_SEED.map((f, i) => [i + 1, f[0], f[1], f[2], '', '', '', '', '', '', 'Y']));
+    sh.getRange(2, 1, FARM_SEED.length, 12).setValues(FARM_SEED.map((f, i) => [i + 1, f[0], f[1], f[2], '', '', '', '', '', '', 'Y', '']));
     sh.getRange('F:F').setNumberFormat('yyyy-mm-dd'); sh.getRange('J:J').setNumberFormat('yyyy-mm-dd');
     sh.getRange('E:E').setNumberFormat('@'); sh.getRange('H:H').setNumberFormat('@');
     sh.setColumnWidths(1, 11, 100); sh.setColumnWidth(7, 150); sh.setColumnWidth(8, 150);
@@ -135,7 +135,7 @@ function farmInfo_() {
   if (_farms) return _farms;
   const sh = farmSheet_();
   const last = sh.getLastRow();
-  const v = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues() : [];
+  const v = last > 1 ? sh.getRange(2, 1, last - 1, 12).getValues() : [];
   const map = {};
   v.forEach(r => {
     const app = String(r[3] || '').trim(); if (!app) return;
@@ -147,7 +147,7 @@ function farmInfo_() {
     if (inDate && cnt > 0 && String(r[10]).trim().toUpperCase() !== 'N') {
       f.groups.push({ name: String(r[4] || '').trim() || md_(inDate) + ' 전입', inDate, count: cnt,
         dongs: String(r[7] || '').split(/[,\s·/]+/).map(s => s.replace(/동$/, '').trim()).filter(Boolean),
-        prev: Number(r[8]) || 0, baseTime: baseTime_(r[9]) });
+        prev: Number(r[8]) || 0, baseTime: baseTime_(r[9]), stock0: r[11] === '' || r[11] == null ? null : Number(r[11]) });
     }
   });
   return (_farms = map);
@@ -155,8 +155,8 @@ function farmInfo_() {
 
 /* ---------- 폐사기록 읽기 ---------- */
 function ensureCheckCols_(sh) {
-  if (sh.getRange(1, 9).getValue() === '구분') return;
-  sh.getRange(1, 7, 1, 3).setValues([['피그온 등록', '등록 체크시각', '구분']]).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
+  if (sh.getRange(1, 10).getValue() === '그룹') return;
+  sh.getRange(1, 7, 1, 4).setValues([['피그온 등록', '등록 체크시각', '구분', '그룹']]).setFontWeight('bold').setBackground('#1F4E78').setFontColor('#FFFFFF');
   sh.getRange('H:H').setNumberFormat('yyyy-mm-dd hh:mm');
   sh.setColumnWidths(7, 3, 100);
 }
@@ -168,7 +168,7 @@ function records_() {
   const last = sh.getLastRow();
   if (last < 2) return (_recs = { sh, list: [] });
   const n = last - 1;
-  const v = sh.getRange(2, 1, n, 9).getValues();
+  const v = sh.getRange(2, 1, n, 10).getValues();
   const rt = sh.getRange(2, 5, n, 1).getRichTextValues();
   const list = [];
   v.forEach((r, i) => {
@@ -178,7 +178,7 @@ function records_() {
     const cell = rt[i][0];
     if (cell) cell.getRuns().forEach(run => { const u = run.getLinkUrl(); if (u && !photos.includes(u)) photos.push(u); });
     list.push({ row: i + 2, date, farm, dong: String(r[2] || '').replace(/동$/, '').trim(), count: Number(r[3]) || 0,
-      done: r[6] === true, doneAt: r[7] instanceof Date ? r[7] : null, heat: /폭염/.test(String(r[8] || '')), photos });
+      done: r[6] === true, doneAt: r[7] instanceof Date ? r[7] : null, heat: /폭염/.test(String(r[8] || '')), group: String(r[9] || '').trim(), photos });
   });
   return (_recs = { sh, list });
 }
@@ -192,7 +192,7 @@ function checkGroups_() {
     if (r.done) { if (!r.doneAt || ymd_(r.doneAt) !== today) return; map = done; } else map = pend;
     const k = r.date + '|' + r.farm;
     const g = map[k] || (map[k] = { date: r.date, farm: r.farm, rows: [], total: 0, heat: 0, photos: [] });
-    g.rows.push({ row: r.row, dong: r.dong, count: r.count, heat: r.heat });
+    g.rows.push({ row: r.row, dong: r.dong, count: r.count, heat: r.heat, group: r.group });
     g.total += r.count; if (r.heat) g.heat += r.count;
     r.photos.forEach(u => { if (!g.photos.includes(u)) g.photos.push(u); });
   });
@@ -231,9 +231,12 @@ function groupStats_(asOf) {
     const open = acc.filter(a => !a.g.dongs.length);
     recs.forEach(r => {
       if (r.farm !== f.app || r.date > asOf) return;
-      let targets = acc.filter(a => a.g.dongs.includes(r.dong) && notInPigon_(r, a.g));
-      let shares;
-      if (targets.length) shares = targets.map(() => 1 / targets.length);
+      let targets, shares;
+      const named = r.group && acc.find(a => a.g.name === r.group);
+      if (named) { if (!notInPigon_(r, named.g)) return; targets = [named]; shares = [1]; }
+      else targets = acc.filter(a => a.g.dongs.includes(r.dong) && notInPigon_(r, a.g));
+      if (named) { /* 앱에서 그룹을 직접 고른 기록 */ }
+      else if (targets.length) shares = targets.map(() => 1 / targets.length);
       else {
         targets = open.filter(a => notInPigon_(r, a.g));
         if (!targets.length) return;
@@ -254,7 +257,8 @@ function groupStats_(asOf) {
       out.push({ farm: f.app, order: f.order, group: g.name, inDate: g.inDate, count: g.count,
         dead: r1(a.dead), heat: r1(a.heat), est: r1(a.est),
         rate: r1((g.count - a.dead) / g.count * 100), rateHeat: r1((g.count - a.dead + a.heat) / g.count * 100),
-        lastDate: a.last, dongs: g.dongs });
+        lastDate: a.last, dongs: g.dongs,
+        stock: g.stock0 == null ? null : Math.round(g.stock0 - (a.dead - g.prev)) });
     });
   });
   return out.sort((a, b) => a.order - b.order || (a.inDate < b.inDate ? -1 : 1));
@@ -265,7 +269,7 @@ function importGroups_(groups, baseIso) {
   const sh = farmSheet_();
   const base = baseIso ? new Date(baseIso) : new Date();
   const last = sh.getLastRow();
-  const old = last > 1 ? sh.getRange(2, 1, last - 1, 11).getValues().filter(r => r[3]) : [];
+  const old = last > 1 ? sh.getRange(2, 1, last - 1, 12).getValues().filter(r => r[3]) : [];
   const norm = s => String(s || '').replace(/\s/g, '');
   // 피그온 농장명 → 기존 행 정보 (순서·코드·앱 농장명·동·사용)
   const farmsOrder = [], info = {}, dongs = {};
@@ -284,13 +288,13 @@ function importGroups_(groups, baseIso) {
   const rows = [];
   farmsOrder.forEach(k => {
     const f = info[k], list = (byFarm[k] || []).sort((a, b) => a.inDate < b.inDate ? -1 : 1);
-    if (!list.length) { rows.push([f.order, f.pigon, f.code, f.app, '', '', '', '', '', '', /^n$/i.test(f.use) ? 'N' : 'Y']); return; }
+    if (!list.length) { rows.push([f.order, f.pigon, f.code, f.app, '', '', '', '', '', '', /^n$/i.test(f.use) ? 'N' : 'Y', '']); return; }
     list.forEach(g => rows.push([f.order, f.pigon, f.code, f.app, g.group, new Date(g.inDate + 'T00:00:00+09:00'), g.count,
-      dongs[k + '|' + g.group] || '', g.prev, base, 'Y']));
+      g.dong || dongs[k + '|' + g.group] || '', g.prev, base, 'Y', g.stock == null ? '' : Number(g.stock)]));
   });
-  sh.getRange(2, 1, Math.max(last, 2), 11).clearContent();
+  sh.getRange(2, 1, Math.max(last, 2), 12).clearContent();
   sh.getRange(1, 1, 1, FARM_HEAD.length).setValues([FARM_HEAD]);
-  if (rows.length) sh.getRange(2, 1, rows.length, 11).setValues(rows);
+  if (rows.length) sh.getRange(2, 1, rows.length, 12).setValues(rows);
   sh.getRange('F:F').setNumberFormat('yyyy-mm-dd'); sh.getRange('J:J').setNumberFormat('yyyy-mm-dd hh:mm');
   sh.getRange(rows.length + 3, 1).setValue(FARM_NOTE);
   _farms = null;
@@ -500,6 +504,12 @@ function 알림설치() {
 function 아침알림테스트() { 아침알림_(settings_(), ymd_(new Date())); }
 
 /* ---------- 앱 API ---------- */
+/** 입력 화면용: 농장별 진행 중 그룹 (동·재고·육성율) */
+function appGroups_() {
+  const out = {};
+  groupStats_(ymd_(new Date())).forEach(g => (out[g.farm] = out[g.farm] || []).push({ group: g.group, dongs: g.dongs, stock: g.stock, rate: g.rate }));
+  return out;
+}
 function apiPending_() {
   const S = settings_(), today = ymd_(new Date());
   const farms = farmInfo_();
