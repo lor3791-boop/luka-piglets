@@ -86,6 +86,14 @@
   .allok { text-align: center; padding: 36px 10px; color: var(--ok); font-size: 17px; font-weight: 700; }
   .subh { font-size: 13px; color: var(--muted); margin: 22px 2px 6px; }
   .tabs button { font-size: 14px; padding: 10px 2px; }
+  .dchips, .gsel { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+  .gsel:empty { display: none; }
+  .dchip { font: inherit; font-size: 14px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .dchip.on { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; }
+  .gchip { font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--green-2); background: #fff; color: var(--green); }
+  .gchip.on { background: var(--green); color: #fff; font-weight: 700; }
+  .gchip.auto { border-color: var(--ok); background: #E6F2EA; color: var(--ok); }
+  .gnote { width: 100%; font-size: 13px; color: var(--orange); font-weight: 600; }
   .heat { margin-left: 8px; font: inherit; font-size: 13px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--muted); }
   .heat.on { background: #D9572B; border-color: #D9572B; color: #fff; font-weight: 700; }
   .htag { font-size: 11px; font-weight: 700; color: #fff; background: #D9572B; border-radius: 5px; padding: 0 5px; margin-left: 4px; }
@@ -204,6 +212,7 @@
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbwmyNqtik9FKDVG2TdNiJxkYDlmX7qIvXm_kcH0Tx_gNc8M56LAfNipZVMWjptc5x3KtQ/exec';
 const $ = id => document.getElementById(id);
+const escH = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
@@ -218,7 +227,7 @@ const START_VIEW = (location.hash.match(/(?:^#|&)(check|stats|settings)\b/) || [
 })();
 const KEY = store.get('key', '');
 
-const state = { photos: [], farm: '', rows: [{ dong: '', count: 1 }], farms: store.get('farms', []), showAll: false, heatOn: store.get('heatOn', false) };
+const state = { photos: [], farm: '', rows: [{ dong: '', count: 1, group: '' }], farms: store.get('farms', []), groups: store.get('groups', {}), showAll: false, heatOn: store.get('heatOn', false) };
 const today = () => { const d = new Date(Date.now() + 9 * 3600e3); return d.toISOString().slice(0, 10); };
 
 function toast(msg, ok = true) {
@@ -344,7 +353,7 @@ function renderFarms() {
     const b = document.createElement('button');
     b.className = 'farm' + (f === state.farm ? ' on' : '') + (rec.includes(f) ? ' recent' : '');
     b.textContent = f.replace(/농장$|농원$/, '');
-    b.onclick = () => { state.farm = f; renderFarms(); update(); };
+    b.onclick = () => { state.farm = f; state.rows.forEach(r => r.group = ''); renderFarms(); renderRows(); update(); };
     box.appendChild(b);
   });
   $('more').hidden = state.showAll || list.length >= state.farms.length;
@@ -353,36 +362,64 @@ function renderFarms() {
 }
 $('more').onclick = () => { state.showAll = true; renderFarms(); };
 
-// ---------- 동·두수 ----------
+// ---------- 동·두수 (동 → 그룹 자동 연결) ----------
+const farmGroups = () => (state.groups || {})[state.farm] || [];
+const farmHasDongs = () => farmGroups().some(g => g.dongs && g.dongs.length);
+const gLabel = g => `${g.group}(${g.stock != null ? '재고' + Number(g.stock).toLocaleString() + ', ' : ''}${g.rate.toFixed(1)}%)`;
+function rowGroups(r) {
+  const list = farmGroups();
+  if (!list.length) return { mode: 'none', list: [] };
+  if (!farmHasDongs()) return { mode: 'pick', list, note: '동 없이 관리 — 그룹을 고르세요' };
+  if (!r.dong) return { mode: 'wait', list: [] };
+  const hit = list.filter(g => g.dongs.includes(r.dong));
+  if (hit.length === 1) return { mode: 'auto', list: hit };
+  if (hit.length > 1) return { mode: 'pick', list: hit, note: `${r.dong}동에 그룹이 ${hit.length}개 — 어느 그룹인가요?` };
+  return { mode: 'pick', list, note: `${r.dong}동에 배치된 그룹이 없습니다 — 그룹을 고르세요` };
+}
+function groupHtml(r) {
+  const g = rowGroups(r);
+  if (g.mode === 'auto') { r.group = g.list[0].group; return `<span class="gchip on auto">자동 연결 · ${escH(gLabel(g.list[0]))}</span>`; }
+  if (g.mode !== 'pick') { r.group = ''; return ''; }
+  if (r.group && !g.list.some(x => x.group === r.group)) r.group = '';
+  return `<div class="gnote">${escH(g.note)}</div>` + g.list.map(x => `<button class="gchip${x.group === r.group ? ' on' : ''}" data-g="${escH(x.group)}">${escH(gLabel(x))}</button>`).join('');
+}
 function renderRows() {
   const box = $('rows'); box.innerHTML = '';
+  const dongs = [...new Set(farmGroups().flatMap(g => g.dongs || []))].sort((a, b) => a.localeCompare(b, 'ko', { numeric: true }));
   state.rows.forEach((r, i) => {
     const d = document.createElement('div'); d.className = 'row';
     d.innerHTML = `
-      <div><div class="dong"><input inputmode="numeric" placeholder="동" value="${r.dong}"><span>동</span>${state.heatOn ? `<button class="heat${r.heat ? ' on' : ''}">폭염</button>` : ''}</div>
+      <div><div class="dong"><input inputmode="numeric" placeholder="동" value="${escH(r.dong)}"><span>동</span>${state.heatOn ? `<button class="heat${r.heat ? ' on' : ''}">폭염</button>` : ''}</div>
         ${state.rows.length > 1 ? '<button class="rm">이 줄 빼기</button>' : ''}</div>
-      <div class="step"><button aria-label="한 마리 빼기">−</button><input inputmode="numeric" value="${r.count}"><button aria-label="한 마리 더하기">+</button></div>`;
+      <div class="step"><button aria-label="한 마리 빼기">−</button><input inputmode="numeric" value="${r.count}"><button aria-label="한 마리 더하기">+</button></div>
+      ${dongs.length ? `<div class="dchips">${dongs.map(x => `<button class="dchip${x === r.dong ? ' on' : ''}" data-d="${escH(x)}">${escH(x)}동</button>`).join('')}</div>` : ''}
+      <div class="gsel">${groupHtml(r)}</div>`;
     const [dong, cnt] = d.querySelectorAll('input');
     const [minus, plus] = d.querySelectorAll('.step button');
-    dong.oninput = () => { r.dong = dong.value.replace(/동$/, '').trim(); update(); };
+    const regroup = () => { d.querySelector('.gsel').innerHTML = groupHtml(r); d.querySelectorAll('.dchip').forEach(b => b.classList.toggle('on', b.dataset.d === r.dong)); update(); };
+    dong.oninput = () => { r.dong = dong.value.replace(/동$/, '').trim(); r.group = ''; regroup(); };
     cnt.oninput = () => { r.count = Math.max(0, parseInt(cnt.value, 10) || 0); update(); };
     minus.onclick = () => { r.count = Math.max(0, r.count - 1); cnt.value = r.count; update(); };
     plus.onclick = () => { r.count += 1; cnt.value = r.count; update(); };
+    d.querySelectorAll('.dchip').forEach(b => b.onclick = () => { r.dong = b.dataset.d; dong.value = r.dong; r.group = ''; regroup(); });
+    d.querySelector('.gsel').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; r.group = b.dataset.g; regroup(); };
     const rm = d.querySelector('.rm'); if (rm) rm.onclick = () => { state.rows.splice(i, 1); renderRows(); update(); };
     const ht = d.querySelector('.heat'); if (ht) ht.onclick = () => { r.heat = !r.heat; ht.classList.toggle('on', r.heat); };
     box.appendChild(d);
   });
 }
-$('addrow').onclick = () => { state.rows.push({ dong: '', count: 1 }); renderRows(); update(); setTimeout(() => { const ins = $('rows').querySelectorAll('.dong input'); ins[ins.length - 1].focus(); }, 50); };
+$('addrow').onclick = () => { state.rows.push({ dong: '', count: 1, group: '' }); renderRows(); update(); setTimeout(() => { const ins = $('rows').querySelectorAll('.dong input'); ins[ins.length - 1].focus(); }, 50); };
 
 function update() {
   const rows = state.rows.filter(r => r.count > 0);
   const total = rows.reduce((a, r) => a + r.count, 0);
-  const missingDong = rows.some(r => !r.dong);
+  const needDong = farmHasDongs() || !farmGroups().length;
+  const missingDong = needDong && rows.some(r => !r.dong);
+  const missingGroup = farmGroups().length > 0 && rows.some(r => !r.group);
   $('sum').innerHTML = state.farm
-    ? `${state.farm.replace(/농장$/, '')} · <b>${total}두</b>${missingDong ? '<br>동 번호를 넣어 주세요' : ''}`
+    ? `${state.farm.replace(/농장$/, '')} · <b>${total}두</b>${missingDong ? '<br>동 번호를 넣어 주세요' : missingGroup ? '<br>그룹을 골라 주세요' : ''}`
     : '농장을 고르고 두수를 넣으세요';
-  $('save').disabled = !state.farm || !total || missingDong || state.photos.some(p => p.busy);
+  $('save').disabled = !state.farm || !total || missingDong || missingGroup || state.photos.some(p => p.busy);
 }
 
 // ---------- 서버 ----------
@@ -395,7 +432,9 @@ async function loadFarms() {
     const j = await api({ action: 'farms' });
     if (!j.ok) throw new Error(j.error);
     state.farms = j.farms; store.set('farms', j.farms); renderFarms();
-    if (j.heat !== undefined && j.heat !== state.heatOn) { state.heatOn = j.heat; store.set('heatOn', j.heat); renderRows(); }
+    if (j.heat !== undefined) { state.heatOn = j.heat; store.set('heatOn', j.heat); }
+    if (j.groups) { state.groups = j.groups; store.set('groups', j.groups); }
+    renderRows(); update();
   } catch (e) {
     if (!state.farms.length) $('farms').innerHTML = '<div class="empty">농장 목록을 못 불러왔습니다.<br>원인: ' +
       String(e.message || e).replace(/[<>&]/g, '') + '</div>';
@@ -469,7 +508,7 @@ $('save').onclick = async () => {
     }
     const rec = [farm].concat(recentFarms().filter(f => f !== farm)).slice(0, 9); store.set('recentFarms', rec);
     state.photos.forEach(p => URL.revokeObjectURL(p.url));
-    Object.assign(state, { photos: [], farm: '', rows: [{ dong: '', count: 1 }], showAll: false });
+    Object.assign(state, { photos: [], farm: '', rows: [{ dong: '', count: 1, group: '' }], showAll: false });
     renderPhotos(); renderFarms(); renderRows(); update(); loadRecent(); flushPending(); loadCheck();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
@@ -493,7 +532,7 @@ function sortGroups(list) {
     : (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : ord(a.farm) - ord(b.farm));
 }
 function cardHtml(g, i, done, byFarm) {
-  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두${r.heat ? '<span class="htag">폭염</span>' : ''}`).join(' · ');
+  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두${r.group ? `<span class="sm">(${esc(r.group)})</span>` : ''}${r.heat ? '<span class="htag">폭염</span>' : ''}`).join(' · ');
   const ph = g.photos.length ? `<a href="${esc(g.photos[0])}" target="_blank" rel="noopener">사진${g.photos.length > 1 ? ' ' + g.photos.length : ''}</a>` : '';
   const late = !done && g.days >= checkData.lateDays;
   const title = byFarm ? md(g.date) : esc(short(g.farm));
@@ -585,7 +624,7 @@ function renderStats() {
     const o = checkData.order[f] || {};
     return `<div class="stat"><h3>${esc(o.pigon || short(f))}<span class="code">${esc(o.code || '')}</span></h3><table>` +
       byFarm[f].map(g => `<tr><td><b>${esc(g.group)}</b>${g.dongs.length ? ` <span class="sm">${esc(g.dongs.join(','))}동</span>` : ''}<br>
-        <span class="sm">전입 ${esc(g.inDate.slice(5).replace('-', '/'))} · ${g.count.toLocaleString()}두 · 누적 ${Math.round(g.dead)}${g.heat ? ` (폭염 ${Math.round(g.heat)})` : ''}${g.est ? ` · 동 미지정 ${g.est}두 재고비율 배분` : ''}${g.lastDate ? ' · 최근 입력 ' + esc(g.lastDate.slice(5).replace('-', '/')) : ''}</span></td>
+        <span class="sm">${g.stock != null ? `<b style="color:var(--ink)">재고 ${g.stock.toLocaleString()}</b> · ` : ''}전입 ${esc(g.inDate.slice(5).replace('-', '/'))} · ${g.count.toLocaleString()}두 · 누적 ${Math.round(g.dead)}${g.heat ? ` (폭염 ${Math.round(g.heat)})` : ''}${g.est ? ` · 동 미지정 ${g.est}두 재고비율 배분` : ''}${g.lastDate ? ' · 최근 입력 ' + esc(g.lastDate.slice(5).replace('-', '/')) : ''}</span></td>
         <td class="r"><span class="rate${g.rate < checkData.threshold ? ' bad' : ''}">${g.rate.toFixed(1)}%</span>${g.heat ? `<br><span class="sm">폭염 포함 ${g.rateHeat.toFixed(1)}%</span>` : ''}</td></tr>`).join('') +
       '</table></div>';
   }).join('');
@@ -723,7 +762,7 @@ $('inflowFile').onchange = async e => {
     msg.textContent = `그룹 ${groups.length}개 확인 — 저장 중…`;
     const base = new Date(f.lastModified || Date.now()).toISOString();
     const j = await post({ key: KEY, action: 'importGroups', base,
-      groups: groups.map(({ farm, group, inDate, count, prev }) => ({ farm, group, inDate, count, prev })) });
+      groups: groups.map(({ farm, group, inDate, count, prev, stock }) => ({ farm, group, inDate, count, prev, stock })) });
     msg.textContent = `✓ 담당 농장 그룹 ${j.groups}개를 반영했습니다 (기준: ${new Date(base).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}).` +
       (j.skipped && j.skipped.length ? ` 담당 아닌 농장 ${j.skipped.length}곳은 건너뜀.` : '');
     toast('전입현황을 반영했습니다'); loadCheck();
