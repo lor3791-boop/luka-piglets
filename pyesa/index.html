@@ -127,7 +127,7 @@
   .lrow .w { flex: 1; min-width: 0; }
   .lrow .ok { font-size: 11px; font-weight: 700; color: var(--ok); border: 1px solid var(--ok); border-radius: 6px; padding: 1px 5px; }
   .lrow .no { font-size: 11px; font-weight: 700; color: var(--orange); border: 1px solid var(--orange); border-radius: 6px; padding: 1px 5px; }
-  .lrow .ed { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--green-2); background: #fff; color: var(--green); }
+  .ed { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--green-2); background: #fff; color: var(--green); }
   .edit { width: 100%; display: grid; gap: 8px; padding: 10px; background: #F4F2EC; border-radius: 10px; margin-top: 6px; }
   .edit label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
   .edit input, .edit select { font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); min-height: 44px; box-sizing: border-box; width: 100%; }
@@ -518,9 +518,19 @@ $('save').onclick = async () => {
     const photos = [];
     let skipped = 0;
     for (const p of state.photos) { const x = await shrink(p.file); if (x) photos.push(x); else skipped++; }
-    const payload = { key: KEY, farm, date: $('date').value || today(), rows: state.rows.filter(r => r.count > 0), photos };
+    // 같은 사진 중복 저장 막기: 원본 사진 지문(SHA-256 앞 16자)을 같이 보냄 — 서버가 최근 기록과 비교
+    const ph = [];
+    for (const p of state.photos) { try { const d = new Uint8Array(await crypto.subtle.digest('SHA-256', await p.file.arrayBuffer())); ph.push([...d.slice(0, 8)].map(x => x.toString(16).padStart(2, '0')).join('')); } catch (e) {} }
+    const force = state.forceUntil && Date.now() < state.forceUntil;
+    const payload = { key: KEY, farm, date: $('date').value || today(), rows: state.rows.filter(r => r.count > 0), photos, ph, ...(force ? { force: true } : {}) };
     try {
-      const j = await post(payload);
+      let j;
+      try { j = await post(payload); }
+      catch (e) {
+        if (/이미 저장/.test(e.message || '')) { state.forceUntil = Date.now() + 30000; toast(e.message + ' — 그래도 저장하려면 30초 안에 저장을 한 번 더 누르세요', false); return; }
+        throw e;
+      }
+      state.forceUntil = 0;
       toast(`${farm} ${j.total}두 저장 완료 (사진 ${j.photos}장)` + (skipped ? ` · 사진 ${skipped}장은 용량이 너무 커서 제외` : '') + (j.spike ? ' · ⚠ 폐사 급증 알림을 카톡으로 보냈습니다' : ''));
     } catch (e) {
       if (!e.offline) throw e;
@@ -553,7 +563,7 @@ function sortGroups(list) {
     : (a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : ord(a.farm) - ord(b.farm));
 }
 function cardHtml(g, i, done, byFarm) {
-  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두${r.group ? `<span class="sm">(${esc(r.group)})</span>` : ''}${r.heat ? '<span class="htag">폭염</span>' : ''}`).join(' · ');
+  const dongs = g.rows.map(r => `${r.dong ? esc(r.dong) + '동 ' : ''}${r.count}두${r.group ? `<span class="sm">(${esc(r.group)})</span>` : ''}${r.heat ? '<span class="htag">폭염</span>' : ''}${done ? '' : ` <button class="ed" data-row="${r.row}" data-farm="${esc(g.farm)}" data-d="${g.date}">수정</button>`}`).join(' · ');
   const ph = g.photos.length ? `<a href="${esc(g.photos[0])}" target="_blank" rel="noopener">사진${g.photos.length > 1 ? ' ' + g.photos.length : ''}</a>` : '';
   const late = !done && g.days >= checkData.lateDays;
   const title = byFarm ? md(g.date) : esc(short(g.farm));
@@ -621,6 +631,7 @@ async function mark(list, done) {
 }
 $('check').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
+  if (b.classList.contains('ed')) { L.farm = b.dataset.farm; L.pendingEdit = Number(b.dataset.row); const need = Math.round((Date.parse(today()) - Date.parse(b.dataset.d)) / 864e5) + 1; L.days = need <= 7 ? 7 : need <= 14 ? 14 : 30; show('list'); return; }
   if (b.dataset.s) { sortMode = b.dataset.s; store.set('sortMode', sortMode); return renderCheck(); }
   const sorted = sortGroups(checkData.groups);
   if (b.dataset.date) return mark(sorted.filter(g => g.date === b.dataset.date), true);
@@ -791,7 +802,7 @@ $('inflowFile').onchange = async e => {
 };
 
 // ---------- 목록·수정 (날짜·동/그룹·두수 고치기 — 고치면 피그온 '등록완료'가 풀려 다시 미등록) ----------
-const L = { days: store.get('lDays', 7), farm: '', rows: [], edit: null };
+const L = { days: store.get('lDays', 7), farm: '', rows: [], edit: null, pendingEdit: 0 };
 const mdw = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}(${WD[new Date(d + 'T12:00:00').getDay()]})`;
 function dgOpts(farm, cur) {
   const gs = (state.groups || {})[farm] || [];
@@ -820,7 +831,8 @@ function renderList() {
         <div class="two"><label>날짜<input type="date" id="eDate" value="${e.date}" max="${today()}"></label><label>두수<input id="eCnt" type="number" inputmode="numeric" min="1" max="300" value="${e.count}"></label></div>
         <label>동 · 그룹<select id="eDg">${dgOpts(r.farm, e.dg).map(o => `<option value="${escH(o.v)}"${o.v === e.dg ? ' selected' : ''}>${escH(o.l)}</option>`).join('')}</select></label>
         ${r.done ? '<div class="sm" style="color:var(--orange)">저장하면 피그온 등록완료가 풀려 다시 미등록이 됩니다</div>' : ''}
-        <div class="two"><button class="btn" id="eCancel">취소</button><button class="btn pri" id="eSave">저장</button></div></div>`;
+        <div class="two"><button class="btn" id="eCancel">취소</button><button class="btn pri" id="eSave">저장</button></div>
+        <button class="btn" id="eDel" style="border-color:var(--danger);color:var(--danger);margin:0">${e.del ? '정말 삭제 (사진도 드라이브 휴지통으로)' : '이 기록 삭제'}</button></div>`;
     }).join('') + '</div>';
   }).join('');
 }
@@ -829,7 +841,9 @@ async function loadList() {
     const j = await api({ action: 'list', days: L.days });
     if (!j.ok) throw new Error(j.error);
     L.rows = j.rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.row - a.row));
+    if (L.pendingEdit) { const r = L.rows.find(x => x.row === L.pendingEdit); L.pendingEdit = 0; if (r) L.edit = { row: r.row, date: r.date, count: r.count, dg: (r.dong || '') + '|' + (r.group || '') }; }
     renderList();
+    if (L.edit) { const el = document.querySelector('[data-edit]'); if (el) el.scrollIntoView({ block: 'center' }); }
   } catch (e) { $('lList').innerHTML = '<div class="empty">목록을 못 불러왔습니다<br>' + escH(e.message || e) + '</div>'; }
 }
 $('lDays').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; L.days = Number(b.dataset.d); store.set('lDays', L.days); L.edit = null; loadList(); };
@@ -838,6 +852,17 @@ $('lList').onclick = async e => {
   const b = e.target.closest('.ed');
   if (b) { const r = L.rows.find(x => x.row === Number(b.dataset.row)); L.edit = L.edit && L.edit.row === r.row ? null : { row: r.row, date: r.date, count: r.count, dg: (r.dong || '') + '|' + (r.group || '') }; renderList(); return; }
   if (e.target.id === 'eCancel') { L.edit = null; renderList(); return; }
+  if (e.target.id === 'eDel') {
+    if (!L.edit.del) { L.edit.date = $('eDate').value; L.edit.count = $('eCnt').value; L.edit.dg = $('eDg').value; L.edit.del = true; renderList(); return; }
+    const r = L.rows.find(x => x.row === L.edit.row);
+    $('busy').classList.add('show');
+    try {
+      const j = await post({ key: KEY, action: 'delete', row: r.row, was: { date: r.date, farm: r.farm, count: r.count } });
+      L.edit = null; toast(`삭제했습니다${j.trashed ? ` (사진 ${j.trashed}장 휴지통)` : ''}`); loadList(); loadCheck(); loadRecent();
+    } catch (err) { toast(String(err.message || err), false); }
+    finally { $('busy').classList.remove('show'); }
+    return;
+  }
   if (e.target.id === 'eSave') {
     const r = L.rows.find(x => x.row === L.edit.row);
     const date = $('eDate').value, count = parseInt($('eCnt').value, 10), [dong, group] = $('eDg').value.split('|');
