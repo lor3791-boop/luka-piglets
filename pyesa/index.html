@@ -218,6 +218,10 @@
       <a class="lnk" id="farmSheetLink" target="_blank" rel="noopener">농장기준 시트 열기</a>
       <a class="lnk" id="recSheetLink" target="_blank" rel="noopener">폐사 기록 시트 열기</a>
     </section>
+    <section><h2>대시보드 연결</h2>
+      <div class="sm" style="line-height:1.5">대시보드 설정 › 폐사입력 앱 연결 칸에 붙여 넣을 접속 키입니다.</div>
+      <button class="btn" id="copyKey" style="margin-top:8px">접속 키 복사</button>
+    </section>
   </div>
 </main>
 
@@ -877,6 +881,7 @@ $('lList').onclick = async e => {
     finally { $('busy').classList.remove('show'); }
   }
 };
+$('copyKey').onclick = async () => { try { await navigator.clipboard.writeText(KEY); toast('접속 키를 복사했습니다'); } catch (e) { toast('복사하지 못했습니다', false); } };
 $('toList').onclick = e => { e.preventDefault(); show('list'); };
 
 // 좌우로 밀면 옆 탭 (입력칸·가로 스크롤 위에서는 무시)
