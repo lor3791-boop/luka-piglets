@@ -121,6 +121,19 @@
   .btn.pri { background: var(--green); color: #fff; }
   .kstat { font-size: 14px; line-height: 1.6; }
   .kstat .err { color: var(--danger); font-size: 13px; word-break: break-all; }
+  .lday { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; margin-bottom: 8px; }
+  .lday h3 { margin: 0 0 4px; font-size: 15px; display: flex; justify-content: space-between; }
+  .lrow { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; flex-wrap: wrap; }
+  .lrow .w { flex: 1; min-width: 0; }
+  .lrow .ok { font-size: 11px; font-weight: 700; color: var(--ok); border: 1px solid var(--ok); border-radius: 6px; padding: 1px 5px; }
+  .lrow .no { font-size: 11px; font-weight: 700; color: var(--orange); border: 1px solid var(--orange); border-radius: 6px; padding: 1px 5px; }
+  .lrow .ed { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--green-2); background: #fff; color: var(--green); }
+  .edit { width: 100%; display: grid; gap: 8px; padding: 10px; background: #F4F2EC; border-radius: 10px; margin-top: 6px; }
+  .edit label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+  .edit input, .edit select { font: inherit; font-size: 16px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); min-height: 44px; box-sizing: border-box; width: 100%; }
+  .edit .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .lfil { display: flex; gap: 6px; margin-bottom: 8px; }
+  .lfil select { flex: 1; font: inherit; font-size: 14px; padding: 8px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
   a.lnk { color: var(--green-2); font-size: 14px; display: inline-block; margin: 8px 14px 0 0; }
 </style>
 </head>
@@ -131,6 +144,7 @@
 </header>
 <nav class="tabs" id="tabs" hidden>
   <button data-v="form" class="on">입력</button>
+  <button data-v="list">목록</button>
   <button data-v="check">미등록<b id="pendN"></b></button>
   <button data-v="stats">육성율<b id="alertN"></b></button>
   <button data-v="settings">설정</button>
@@ -169,9 +183,16 @@
     </section>
 
     <section class="recent">
-      <h2>최근 입력 <a href="#" id="reload" style="color:var(--green-2);font-weight:400">새로고침</a></h2>
+      <h2>최근 입력 <a href="#" id="reload" style="color:var(--green-2);font-weight:400">새로고침</a> <a href="#" id="toList" style="color:var(--green-2);font-weight:400">목록·수정</a></h2>
       <ul id="recent"><li class="empty">불러오는 중…</li></ul>
     </section>
+  </div>
+
+  <div id="list" hidden>
+    <div class="seg" id="lDays"><button data-d="7">7일</button><button data-d="14">14일</button><button data-d="30">30일</button></div>
+    <div class="lfil"><select id="lFarm"><option value="">농장 전체</option></select></div>
+    <div id="lSum" class="sm" style="margin:0 2px 8px"></div>
+    <div id="lList"><div class="empty">불러오는 중…</div></div>
   </div>
 
   <div id="check" hidden>
@@ -219,7 +240,7 @@ const store = {
 };
 
 // 접속 키: 설정 링크(#k=...)로 한 번 열면 저장. 카톡 알림 링크는 #check&k=... 로 들어와 바로 체크 화면을 엶
-const START_VIEW = (location.hash.match(/(?:^#|&)(check|stats|settings)\b/) || [])[1] || 'form';
+const START_VIEW = (location.hash.match(/(?:^#|&)(check|stats|settings|list)\b/) || [])[1] || 'form';
 (() => {
   const m = location.hash.match(/k=([\w-]+)/);
   if (m) store.set('key', m[1]);
@@ -769,12 +790,89 @@ $('inflowFile').onchange = async e => {
   } catch (err) { msg.textContent = '실패: ' + (err.message || err); toast('전입현황 반영 실패', false); }
 };
 
+// ---------- 목록·수정 (날짜·동/그룹·두수 고치기 — 고치면 피그온 '등록완료'가 풀려 다시 미등록) ----------
+const L = { days: store.get('lDays', 7), farm: '', rows: [], edit: null };
+const mdw = d => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}(${WD[new Date(d + 'T12:00:00').getDay()]})`;
+function dgOpts(farm, cur) {
+  const gs = (state.groups || {})[farm] || [];
+  const o = [];
+  gs.forEach(g => { const ds = g.dongs && g.dongs.length ? g.dongs : ['']; ds.forEach(d => o.push({ v: d + '|' + g.group, l: (d ? d + '동 · ' : '') + g.group })); });
+  if (cur && !o.some(x => x.v === cur)) { const [d, g] = cur.split('|'); o.unshift({ v: cur, l: (d ? d + '동' : '') + (d && g ? ' · ' : '') + (g || (d ? '' : '그룹 없음')) + ' (지금 값)' }); }
+  return o;
+}
+function renderList() {
+  [...$('lDays').children].forEach(b => b.classList.toggle('on', Number(b.dataset.d) === L.days));
+  const farms = [...new Set(L.rows.map(r => r.farm))].sort((a, b) => a.localeCompare(b, 'ko'));
+  $('lFarm').innerHTML = '<option value="">농장 전체</option>' + farms.map(f => `<option${f === L.farm ? ' selected' : ''}>${escH(f)}</option>`).join('');
+  const rows = L.rows.filter(r => !L.farm || r.farm === L.farm);
+  const tot = rows.reduce((a, r) => a + r.count, 0), un = rows.filter(r => !r.done).reduce((a, r) => a + r.count, 0);
+  $('lSum').innerHTML = `${L.days}일 동안 <b>${tot}두</b> · 피그온 미등록 ${un}두`;
+  const days = [...new Set(rows.map(r => r.date))].sort().reverse();
+  if (!days.length) { $('lList').innerHTML = '<div class="empty">기록이 없습니다</div>'; return; }
+  $('lList').innerHTML = days.map(d => {
+    const R = rows.filter(r => r.date === d);
+    return `<div class="lday"><h3><span>${mdw(d)}</span><span>${R.reduce((a, r) => a + r.count, 0)}두</span></h3>` + R.map(r => {
+      const main = `<div class="lrow"><div class="w"><b>${escH(r.farm.replace(/농장$/, ''))}</b> ${r.dong ? escH(r.dong) + '동 ' : ''}${r.group ? '· ' + escH(r.group) : ''}${r.heat ? '<span class="htag">폭염</span>' : ''}${r.photos ? ` <span class="sm">사진 ${r.photos}</span>` : ''}</div>
+        <b>${r.count}두</b><span class="${r.done ? 'ok' : 'no'}">${r.done ? '등록완료' : '미등록'}</span><button class="ed" data-row="${r.row}">수정</button></div>`;
+      if (!L.edit || L.edit.row !== r.row) return main;
+      const e = L.edit;
+      return main + `<div class="edit" data-edit="${r.row}">
+        <div class="two"><label>날짜<input type="date" id="eDate" value="${e.date}" max="${today()}"></label><label>두수<input id="eCnt" type="number" inputmode="numeric" min="1" max="300" value="${e.count}"></label></div>
+        <label>동 · 그룹<select id="eDg">${dgOpts(r.farm, e.dg).map(o => `<option value="${escH(o.v)}"${o.v === e.dg ? ' selected' : ''}>${escH(o.l)}</option>`).join('')}</select></label>
+        ${r.done ? '<div class="sm" style="color:var(--orange)">저장하면 피그온 등록완료가 풀려 다시 미등록이 됩니다</div>' : ''}
+        <div class="two"><button class="btn" id="eCancel">취소</button><button class="btn pri" id="eSave">저장</button></div></div>`;
+    }).join('') + '</div>';
+  }).join('');
+}
+async function loadList() {
+  try {
+    const j = await api({ action: 'list', days: L.days });
+    if (!j.ok) throw new Error(j.error);
+    L.rows = j.rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.row - a.row));
+    renderList();
+  } catch (e) { $('lList').innerHTML = '<div class="empty">목록을 못 불러왔습니다<br>' + escH(e.message || e) + '</div>'; }
+}
+$('lDays').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; L.days = Number(b.dataset.d); store.set('lDays', L.days); L.edit = null; loadList(); };
+$('lFarm').onchange = () => { L.farm = $('lFarm').value; L.edit = null; renderList(); };
+$('lList').onclick = async e => {
+  const b = e.target.closest('.ed');
+  if (b) { const r = L.rows.find(x => x.row === Number(b.dataset.row)); L.edit = L.edit && L.edit.row === r.row ? null : { row: r.row, date: r.date, count: r.count, dg: (r.dong || '') + '|' + (r.group || '') }; renderList(); return; }
+  if (e.target.id === 'eCancel') { L.edit = null; renderList(); return; }
+  if (e.target.id === 'eSave') {
+    const r = L.rows.find(x => x.row === L.edit.row);
+    const date = $('eDate').value, count = parseInt($('eCnt').value, 10), [dong, group] = $('eDg').value.split('|');
+    if (!date) return toast('날짜를 넣어 주세요', false);
+    if (!(count >= 1 && count <= 300)) return toast('두수는 1~300', false);
+    $('busy').classList.add('show');
+    try {
+      const j = await post({ key: KEY, action: 'edit', row: r.row, was: { date: r.date, farm: r.farm, count: r.count }, date, dong, group, count });
+      if (!j || !j.ok) throw new Error((j && j.error) || '저장 실패');
+      L.edit = null; toast('수정했습니다'); loadList(); loadCheck(); loadRecent();
+    } catch (err) { toast(String(err.message || err), false); }
+    finally { $('busy').classList.remove('show'); }
+  }
+};
+$('toList').onclick = e => { e.preventDefault(); show('list'); };
+
+// 좌우로 밀면 옆 탭 (입력칸·가로 스크롤 위에서는 무시)
+const VIEWS = ['form', 'list', 'check', 'stats', 'settings'];
+let sw0 = null;
+const canSwipe = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) return false; const ox = getComputedStyle(n).overflowX; if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 2) return false; } return true; };
+document.addEventListener('touchstart', e => { const t = e.touches[0]; sw0 = e.touches.length === 1 && KEY && canSwipe(e.target) ? { x: t.clientX, y: t.clientY } : null; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!sw0) return; const t = e.changedTouches[0], dx = t.clientX - sw0.x, dy = t.clientY - sw0.y; sw0 = null;
+  if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+  const cur = VIEWS.find(v => !$(v).hidden) || 'form', j = VIEWS.indexOf(cur) + (dx < 0 ? 1 : -1);
+  if (j >= 0 && j < VIEWS.length) show(VIEWS[j]);
+}, { passive: true });
+
 function show(v) {
-  ['form', 'check', 'stats', 'settings'].forEach(x => $(x).hidden = x !== v);
+  VIEWS.forEach(x => $(x).hidden = x !== v);
   $('bar').hidden = v !== 'form';
   [...$('tabs').children].forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if (v === 'check' || v === 'stats') loadCheck();
   if (v === 'settings') loadSettings();
+  if (v === 'list') loadList();
   window.scrollTo(0, 0);
 }
 $('tabs').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.v); };
