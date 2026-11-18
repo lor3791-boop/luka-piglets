@@ -23,6 +23,7 @@
 - 웹앱 배포 ID는 `gas/deploy.sh`에 고정 → **같은 주소를 유지한 채 새 버전**으로 올라간다.
 - 순서: `gas/pull.sh`(브라우저에서 고친 것 먼저 받기) → `gas/src/` 수정 → `gas/deploy.sh "바뀐 내용"`
 - 처음 한 번: https://script.google.com/home/usersettings 에서 **Google Apps Script API 사용** 켜기 → `npx @google/clasp@3 login` (컨테이너에서는 `--no-localhost`).
+- 클라우드 작업공간에서 쓰려면 claude.ai 설정 → Capabilities 허용 도메인에 `oauth2.googleapis.com`, `script.googleapis.com`, `www.googleapis.com` 추가 필요 (없으면 로그인·push가 막힘). 노트북에서는 Node 설치 후 바로 사용 가능.
 - `gas/src/`는 접속 키가 들어 있어 **git에 올리지 않는다**(.gitignore). 키를 스크립트 속성(`PropertiesService`)으로 옮기면 해제한다.
 - 트리거 함수·한 번만 도는 속성(RESCAN_*, PYESA_* 등)은 지우지 말고, 바꾸기 전에 확인한다.
 - 시간 트리거로 도는 함수 이름을 바꾸면 트리거가 끊긴다 → 이름 유지.
